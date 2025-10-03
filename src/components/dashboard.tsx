@@ -47,9 +47,9 @@ export function Dashboard() {
       <main>
         <Tabs defaultValue="diary" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="diary">New Diary Entry</TabsTrigger>
-            <TabsTrigger value="files">Upload File</TabsTrigger>
-            <TabsTrigger value="manage">Manage Data</TabsTrigger>
+            <TabsTrigger value="diary" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-900">New Diary Entry</TabsTrigger>
+            <TabsTrigger value="files" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-900">Upload File</TabsTrigger>
+            <TabsTrigger value="manage" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-900">Manage Data</TabsTrigger>
           </TabsList>
           <TabsContent value="diary">
             <DiaryPane />
