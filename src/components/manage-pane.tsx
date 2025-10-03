@@ -3,9 +3,9 @@
 import { useAuth } from "@/hooks/use-auth";
 import type { DiaryEntry, StoredFile } from "@/lib/types";
 import { formatBytes } from "@/lib/utils";
-import { deleteItem, saveDiaryEntry, updateDiaryEntry } from "@/app/actions";
+import { deleteItem, saveDiaryEntry, updateDiaryEntry, uploadFileAndSave } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useRef, useActionState, useEffect } from "react";
+import { useState, useRef, useActionState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,13 +31,15 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Book, File, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Book, File, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle } from "lucide-react";
 
 type ItemToDelete = {
   id: string;
@@ -55,6 +57,11 @@ type FormState = {
   message: string;
 };
 
+type SharedData = {
+  diary: DiaryEntry[];
+  files: StoredFile[];
+};
+
 const initialFormState: FormState = {
   success: false,
   message: "",
@@ -70,6 +77,17 @@ export function ManagePane() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const deleteConfirmInputRef = useRef<HTMLInputElement>(null);
   const editFormRef = useRef<HTMLFormElement>(null);
+  
+  // States for Share/Import feature
+  const [isShareDialogOpen, setShareDialogOpen] = useState(false);
+  const [isImportDialogOpen, setImportDialogOpen] = useState(false);
+  const [shareCode, setShareCode] = useState("");
+  const [importCode, setImportCode] = useState("");
+  const [selectedDiary, setSelectedDiary] = useState<Record<string, boolean>>({});
+  const [selectedFiles, setSelectedFiles] = useState<Record<string, boolean>>({});
+  const [parsedImportData, setParsedImportData] = useState<SharedData | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+
 
   const [editState, editFormAction, isEditPending] = useActionState(updateDiaryEntry, initialFormState);
 
@@ -85,8 +103,8 @@ export function ManagePane() {
   }, [editState, toast]);
 
 
-  const diaryEntries = userData?.diary ? Object.entries(userData.diary).sort((a, b) => b[1].timestamp - a[1].timestamp) : [];
-  const files = userData?.files ? Object.entries(userData.files).sort((a, b) => b[1].timestamp - a[1].timestamp) : [];
+  const diaryEntries = useMemo(() => userData?.diary ? Object.entries(userData.diary).sort((a, b) => b[1].timestamp - a[1].timestamp) : [], [userData?.diary]);
+  const files = useMemo(() => userData?.files ? Object.entries(userData.files).sort((a, b) => b[1].timestamp - a[1].timestamp) : [], [userData?.files]);
 
   const handleUndo = async (item: ItemToDelete) => {
     if (!userId || item.type !== 'diary') return;
@@ -142,7 +160,104 @@ export function ManagePane() {
   const downloadFile = (file: StoredFile) => {
     window.open(file.url, '_blank');
   };
+  
+  // --- Share/Import Logic ---
 
+  const handleGenerateShareCode = () => {
+    const dataToShare: SharedData = {
+      diary: diaryEntries.filter(([id]) => selectedDiary[id]).map(([, entry]) => entry),
+      files: files.filter(([id]) => selectedFiles[id]).map(([, file]) => file)
+    };
+
+    if (dataToShare.diary.length === 0 && dataToShare.files.length === 0) {
+      toast({ variant: "destructive", title: "Nothing Selected", description: "Please select at least one item to share." });
+      return;
+    }
+
+    try {
+      const jsonString = JSON.stringify(dataToShare);
+      const encoded = btoa(unescape(encodeURIComponent(jsonString))); // Base64 encode
+      setShareCode(encoded);
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Could not generate share code." });
+    }
+  };
+
+  const handleParseImportCode = () => {
+    if (!importCode) {
+      setParsedImportData(null);
+      return;
+    }
+    try {
+      const decoded = decodeURIComponent(escape(atob(importCode)));
+      const parsed: SharedData = JSON.parse(decoded);
+
+      if (!parsed || (!parsed.diary && !parsed.files)) {
+        throw new Error("Invalid data structure");
+      }
+      setParsedImportData(parsed);
+    } catch (e) {
+      setParsedImportData(null);
+      toast({ variant: "destructive", title: "Invalid Code", description: "The share code is malformed or invalid." });
+    }
+  };
+  
+  const handleFinalizeImport = async () => {
+    if (!parsedImportData || !userId) return;
+    setIsImporting(true);
+
+    let diarySuccess = 0;
+    let filesSuccess = 0;
+
+    for (const entry of parsedImportData.diary) {
+      const formData = new FormData();
+      formData.set('userId', userId);
+      formData.set('text', entry.text);
+      const result = await saveDiaryEntry({ success: false, message: '' }, formData);
+      if (result.success) diarySuccess++;
+    }
+
+    for (const file of parsedImportData.files) {
+      try {
+        const response = await fetch(file.url);
+        const blob = await response.blob();
+        const newFile = new File([blob], file.name, { type: blob.type });
+
+        const formData = new FormData();
+        formData.set('userId', userId);
+        formData.set('file', newFile);
+        const result = await uploadFileAndSave({ success: false, message: '' }, formData);
+        if (result.success) filesSuccess++;
+      } catch (e) {
+        console.error("Failed to import file:", file.name, e);
+      }
+    }
+    
+    setIsImporting(false);
+    setImportDialogOpen(false);
+    setImportCode('');
+    setParsedImportData(null);
+    
+    toast({ title: "Import Complete", description: `Imported ${diarySuccess} diary entries and ${filesSuccess} files.` });
+  };
+  
+  const downloadAllData = () => {
+    const dataToDownload = { diary: userData?.diary ?? {}, files: userData?.files ?? {} };
+    const jsonString = JSON.stringify(dataToDownload, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ura-private-storage-backup-${userId}-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast({title: "Download Started", description: "Your data backup is being downloaded."});
+  }
+
+
+  // --- Dialog Components ---
   const DeleteDialog = () => (
      <AlertDialog open={!!itemToDelete} onOpenChange={() => { setItemToDelete(null); setDeleteConfirmText(""); }}>
       <AlertDialogContent>
@@ -181,7 +296,7 @@ export function ManagePane() {
             Manage Your Data
         </CardTitle>
         <CardDescription>
-          View, open, download, or delete your saved entries and files.
+          View, open, download, edit, or delete your saved entries and files.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -197,10 +312,10 @@ export function ManagePane() {
                             <p className="text-muted-foreground truncate max-w-xs">{entry.text}</p>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="outline" size="sm" onClick={() => setViewingEntry(entry)}><FolderOpen className="h-4 w-4"/></Button>
-                            <Button variant="outline" size="sm" onClick={() => setEditingEntry({ id, data: entry })}><Pencil className="h-4 w-4"/></Button>
-                            <Button variant="outline" size="sm" onClick={() => downloadDiaryEntry(entry)}><Download className="h-4 w-4"/></Button>
-                            <Button variant="destructive" size="sm" onClick={() => setItemToDelete({ id, type: 'diary', data: entry })}><Trash2 className="h-4 w-4" /></Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setViewingEntry(entry)}><FolderOpen className="h-4 w-4"/></Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setEditingEntry({ id, data: entry })}><Pencil className="h-4 w-4"/></Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => downloadDiaryEntry(entry)}><Download className="h-4 w-4"/></Button>
+                            <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => setItemToDelete({ id, type: 'diary', data: entry })}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                     </div>
                     <Separator className="my-2" />
@@ -216,18 +331,18 @@ export function ManagePane() {
                     <div className="flex justify-between items-center text-sm">
                         <div>
                             <p className="font-semibold truncate max-w-[200px]">{file.name}</p>
-                            <p className="text-muted-foreground">{formatBytes(file.size)} &middot; {new Date(file.timestamp).toLocaleDateString()}</p>
+                            <p className="text-muted-foreground">{formatBytes(file.size)} &middot; {new Date(file.timestamp).toLocaleString()}</p>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button asChild variant="outline" size="sm">
+                            <Button asChild variant="outline" size="icon" className="h-8 w-8">
                                 <a href={file.url} target="_blank" rel="noopener noreferrer">
                                     <ExternalLink className="h-4 w-4"/>
                                 </a>
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => downloadFile(file)}>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => downloadFile(file)}>
                                 <Download className="h-4 w-4" />
                             </Button>
-                            <Button variant="destructive" size="sm" onClick={() => setItemToDelete({ id, type: 'files', data: file })}><Trash2 className="h-4 w-4" /></Button>
+                            <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => setItemToDelete({ id, type: 'files', data: file })}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                     </div>
                     <Separator className="my-2" />
@@ -236,6 +351,114 @@ export function ManagePane() {
             </ScrollArea>
           </div>
         </div>
+        
+        {/* Local Folder Section */}
+        <Separator className="my-6" />
+        <div>
+            <h3 className="font-semibold mb-4 flex items-center gap-2"><FolderOpen className="h-5 w-5"/>Local Folder</h3>
+            <div className="p-4 border rounded-lg bg-secondary/30 flex items-center justify-center space-x-4">
+                <Button variant="outline" onClick={downloadAllData}>
+                    <Download className="mr-2 h-4 w-4"/> Download Backup
+                </Button>
+                
+                <Dialog open={isShareDialogOpen} onOpenChange={(open) => { setShareDialogOpen(open); if(!open) { setShareCode(''); setSelectedDiary({}); setSelectedFiles({});} }}>
+                  <DialogTrigger asChild>
+                    <Button><Share2 className="mr-2 h-4 w-4" /> Share Data</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Share Your Data</DialogTitle>
+                      <DialogDescription>Select the items you want to share and generate a share code.</DialogDescription>
+                    </DialogHeader>
+                    {!shareCode ? (
+                        <>
+                        <div className="grid grid-cols-2 gap-4 max-h-[50vh]">
+                            <div className="space-y-2">
+                                <Label>Diary Entries</Label>
+                                <ScrollArea className="h-64 rounded-md border p-2">
+                                  {diaryEntries.map(([id, entry]) => (
+                                    <div key={id} className="flex items-center space-x-2 p-1">
+                                      <Checkbox id={`diary-${id}`} onCheckedChange={(checked) => setSelectedDiary(prev => ({ ...prev, [id]: !!checked }))} />
+                                      <label htmlFor={`diary-${id}`} className="text-sm cursor-pointer">{new Date(entry.timestamp).toLocaleDateString()}: {entry.text.substring(0, 20)}...</label>
+                                    </div>
+                                  ))}
+                                </ScrollArea>
+                            </div>
+                             <div className="space-y-2">
+                                <Label>Files</Label>
+                                <ScrollArea className="h-64 rounded-md border p-2">
+                                  {files.map(([id, file]) => (
+                                    <div key={id} className="flex items-center space-x-2 p-1">
+                                      <Checkbox id={`file-${id}`} onCheckedChange={(checked) => setSelectedFiles(prev => ({...prev, [id]: !!checked }))} />
+                                      <label htmlFor={`file-${id}`} className="text-sm cursor-pointer truncate">{file.name}</label>
+                                    </div>
+                                  ))}
+                                </ScrollArea>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button onClick={handleGenerateShareCode}>Generate Code</Button>
+                        </DialogFooter>
+                        </>
+                    ) : (
+                        <div className="space-y-4">
+                            <Label>Your Share Code</Label>
+                            <Textarea readOnly value={shareCode} rows={8} className="font-mono text-xs"/>
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs text-muted-foreground">Copy this code and send it to someone.</p>
+                                <Button size="sm" onClick={() => { navigator.clipboard.writeText(shareCode); toast({ title: "Copied!", description: "Share code copied to clipboard." })}}>
+                                    <Copy className="mr-2 h-4 w-4"/> Copy Code
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={isImportDialogOpen} onOpenChange={(open) => { setImportDialogOpen(open); if(!open) { setImportCode(''); setParsedImportData(null); } }}>
+                  <DialogTrigger asChild>
+                    <Button variant="secondary"><Upload className="mr-2 h-4 w-4"/> Import Data</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Import Data</DialogTitle>
+                      <DialogDescription>Paste a share code below to import data.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <Textarea 
+                        placeholder="Paste your share code here..." 
+                        value={importCode} 
+                        onChange={(e) => setImportCode(e.target.value)}
+                        rows={6}
+                      />
+                      <Button onClick={handleParseImportCode} disabled={!importCode}>Verify Code</Button>
+                    </div>
+                    {parsedImportData && (
+                        <div className="space-y-4 pt-4 border-t">
+                            <h4 className="font-semibold">Data to Import</h4>
+                            <p className="text-sm"><span className="font-bold">{parsedImportData.diary.length}</span> diary entries</p>
+                            <p className="text-sm"><span className="font-bold">{parsedImportData.files.length}</span> files</p>
+                            <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>Warning</AlertTitle>
+                                <AlertDescription>
+                                    Importing files will use your storage quota. This action cannot be easily undone.
+                                </AlertDescription>
+                            </Alert>
+                             <DialogFooter>
+                                <Button variant="outline" onClick={() => { setImportCode(''); setParsedImportData(null); }}>Clear</Button>
+                                <Button onClick={handleFinalizeImport} disabled={isImporting}>
+                                    {isImporting ? "Importing..." : `Import ${parsedImportData.diary.length + parsedImportData.files.length} items`}
+                                </Button>
+                            </DialogFooter>
+                        </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+
+            </div>
+        </div>
+        
         <DeleteDialog />
         {viewingEntry && (
           <Dialog open={!!viewingEntry} onOpenChange={() => setViewingEntry(null)}>
