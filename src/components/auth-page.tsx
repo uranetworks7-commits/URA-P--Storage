@@ -105,7 +105,7 @@ export function AuthPage() {
         </TabsList>
         <TabsContent value="login">
           <Card>
-            <form action={loginForm.handleSubmit(data => formAction(data as any))}>
+            <form action={formAction}>
               <CardHeader>
                 <CardTitle className="font-headline">Login to Your Account</CardTitle>
                 <CardDescription>Enter your 6-digit ID to access your storage.</CardDescription>
@@ -140,7 +140,7 @@ export function AuthPage() {
         </TabsContent>
         <TabsContent value="register">
           <Card>
-            <form action={createForm.handleSubmit(data => formAction(data as any))}>
+            <form action={formAction}>
               <CardHeader>
                 <CardTitle className="font-headline">Create a New Account</CardTitle>
                 <CardDescription>Choose a 6-digit ID to secure your new storage.</CardDescription>
