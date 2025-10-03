@@ -3,9 +3,9 @@
 import { useAuth } from "@/hooks/use-auth";
 import type { DiaryEntry, StoredFile } from "@/lib/types";
 import { formatBytes } from "@/lib/utils";
-import { deleteItem, saveDiaryEntry } from "@/app/actions";
+import { deleteItem, saveDiaryEntry, updateDiaryEntry } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useRef } from "react";
+import { useState, useRef, useActionState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,7 +35,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import { Book, File, Trash2, ExternalLink, Database, Download, FolderOpen } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Book, File, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save } from "lucide-react";
 
 type ItemToDelete = {
   id: string;
@@ -43,14 +45,44 @@ type ItemToDelete = {
   data: DiaryEntry | StoredFile;
 };
 
+type ItemToEdit = {
+  id: string;
+  data: DiaryEntry;
+};
+
+type FormState = {
+  success: boolean;
+  message: string;
+};
+
+const initialFormState: FormState = {
+  success: false,
+  message: "",
+};
+
 export function ManagePane() {
   const { userId, userData } = useAuth();
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewingEntry, setViewingEntry] = useState<DiaryEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<ItemToEdit | null>(null);
   const [itemToDelete, setItemToDelete] = useState<ItemToDelete | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const deleteConfirmInputRef = useRef<HTMLInputElement>(null);
+  const editFormRef = useRef<HTMLFormElement>(null);
+
+  const [editState, editFormAction, isEditPending] = useActionState(updateDiaryEntry, initialFormState);
+
+  useEffect(() => {
+    if (editState.message) {
+        if(editState.success) {
+            toast({ title: "Success", description: editState.message });
+            setEditingEntry(null);
+        } else {
+            toast({ variant: "destructive", title: "Error", description: editState.message });
+        }
+    }
+  }, [editState, toast]);
 
 
   const diaryEntries = userData?.diary ? Object.entries(userData.diary).sort((a, b) => b[1].timestamp - a[1].timestamp) : [];
@@ -108,10 +140,6 @@ export function ManagePane() {
   }
 
   const downloadFile = (file: StoredFile) => {
-    // For cross-origin files, we can only open them in a new tab.
-    // The browser will decide whether to display or download based on Content-Disposition.
-    // Catbox.moe doesn't set attachment, so it will open in a new tab.
-    // A true download would require a server-side proxy.
     window.open(file.url, '_blank');
   };
 
@@ -170,6 +198,7 @@ export function ManagePane() {
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button variant="outline" size="sm" onClick={() => setViewingEntry(entry)}><FolderOpen className="h-4 w-4"/></Button>
+                            <Button variant="outline" size="sm" onClick={() => setEditingEntry({ id, data: entry })}><Pencil className="h-4 w-4"/></Button>
                             <Button variant="outline" size="sm" onClick={() => downloadDiaryEntry(entry)}><Download className="h-4 w-4"/></Button>
                             <Button variant="destructive" size="sm" onClick={() => setItemToDelete({ id, type: 'diary', data: entry })}><Trash2 className="h-4 w-4" /></Button>
                         </div>
@@ -225,6 +254,38 @@ export function ManagePane() {
                   Download
                 </Button>
               </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+        {editingEntry && (
+          <Dialog open={!!editingEntry} onOpenChange={() => setEditingEntry(null)}>
+            <DialogContent className="max-w-2xl">
+                <form ref={editFormRef} action={editFormAction}>
+                    <input type="hidden" name="userId" value={userId || ""} />
+                    <input type="hidden" name="entryId" value={editingEntry.id} />
+                    <DialogHeader>
+                        <DialogTitle>Edit Diary Entry</DialogTitle>
+                        <DialogDescription>Last updated: {new Date(editingEntry.data.timestamp).toLocaleString()}</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Label htmlFor="edit-diary-text" className="sr-only">Diary Text</Label>
+                        <Textarea
+                            id="edit-diary-text"
+                            name="text"
+                            defaultValue={editingEntry.data.text}
+                            required
+                            rows={12}
+                            className="max-h-[60vh]"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setEditingEntry(null)}>Cancel</Button>
+                        <Button type="submit" disabled={isEditPending}>
+                            <Save className="mr-2 h-4 w-4" />
+                            {isEditPending ? "Saving..." : "Save Changes"}
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
           </Dialog>
         )}

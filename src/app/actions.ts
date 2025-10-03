@@ -74,6 +74,32 @@ export async function saveDiaryEntry(
   }
 }
 
+export async function updateDiaryEntry(
+  prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const text = formData.get("text") as string;
+  const userId = formData.get("userId") as string;
+  const entryId = formData.get("entryId") as string;
+
+  if (!text || !userId || !entryId) {
+    return { success: false, message: "Missing required fields for update." };
+  }
+
+  try {
+    const entryRef = ref(db, `users/${userId}/diary/${entryId}`);
+    await update(entryRef, {
+      text,
+      timestamp: Date.now(), // Also update the timestamp to reflect the edit time
+    });
+    revalidatePath("/");
+    return { success: true, message: "Diary entry updated successfully." };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return { success: false, message: `Failed to update diary entry: ${errorMessage}` };
+  }
+}
+
 async function uploadToCatbox(file: File): Promise<string> {
     const fd = new FormData();
     fd.append('reqtype','fileupload');
