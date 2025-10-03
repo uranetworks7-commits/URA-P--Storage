@@ -223,7 +223,7 @@ export async function uploadFileFromUrlAndSave(
     return { success: true, message: `File from URL uploaded: ${file.name}` };
   } catch (error) {
     console.error("Upload from URL Error:", error);
-    return { success: false, message: "Could not process the file from the URL." };
+    return { success: false, message: "Could not process the file from the URL. It may be due to network issues or CORS policies." };
   }
 }
 
