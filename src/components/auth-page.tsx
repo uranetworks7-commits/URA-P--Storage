@@ -69,6 +69,9 @@ export function AuthPage() {
     }
   }, [formState, login, toast, form]);
 
+  const onSubmit = (data: FormData) => {
+    formAction(data);
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
@@ -82,7 +85,7 @@ export function AuthPage() {
         </div>
       </header>
       <Card className="w-full max-w-md">
-        <form action={() => form.handleSubmit(data => formAction(data))()}>
+        <form action={form.handleSubmit(onSubmit)}>
           <CardHeader>
             <CardTitle className="font-headline">Login or Create Account</CardTitle>
             <CardDescription>Enter a 6-digit ID to create an account or log in.</CardDescription>
