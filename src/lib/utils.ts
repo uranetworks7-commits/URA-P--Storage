@@ -24,3 +24,17 @@ export function isImageFile(fileName: string): boolean {
     const lowercasedName = fileName.toLowerCase();
     return imageExtensions.some(ext => lowercasedName.endsWith(ext));
 }
+
+export function isVideoFile(fileName: string): boolean {
+    if (!fileName) return false;
+    const videoExtensions = ['.mp4', '.webm', '.mov', '.ogg'];
+    const lowercasedName = fileName.toLowerCase();
+    return videoExtensions.some(ext => lowercasedName.endsWith(ext));
+}
+
+export function isAudioFile(fileName: string): boolean {
+    if (!fileName) return false;
+    const audioExtensions = ['.mp3', '.wav', '.m4a'];
+    const lowercasedName = fileName.toLowerCase();
+    return audioExtensions.some(ext => lowercasedName.endsWith(ext));
+}

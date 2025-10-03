@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import type { DiaryEntry, StoredFile } from "@/lib/types";
-import { formatBytes, isImageFile } from "@/lib/utils";
+import { formatBytes, isImageFile, isVideoFile, isAudioFile } from "@/lib/utils";
 import { deleteItem, saveDiaryEntry, updateDiaryEntry, uploadFileAndSave } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useRef, useActionState, useEffect, useMemo } from "react";
@@ -40,7 +40,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox, Eye } from "lucide-react";
+import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox, Eye, Film, Music } from "lucide-react";
 import Image from "next/image";
 
 type ItemToDelete = {
@@ -291,6 +291,19 @@ export function ManagePane() {
     </AlertDialog>
   );
 
+  const getFileIcon = (fileName: string) => {
+    if (isImageFile(fileName)) {
+      return null;
+    }
+    if (isVideoFile(fileName)) {
+      return <Film className="h-6 w-6 text-muted-foreground" />;
+    }
+    if (isAudioFile(fileName)) {
+      return <Music className="h-6 w-6 text-muted-foreground" />;
+    }
+    return <FileIcon className="h-6 w-6 text-muted-foreground" />;
+  }
+
   return (
     <Card>
       <CardHeader className="p-3">
@@ -336,7 +349,7 @@ export function ManagePane() {
                             {isImageFile(file.name) ? (
                                 <Image src={file.url} alt={file.name} width={32} height={32} className="object-cover rounded-sm h-8 w-8" />
                             ) : (
-                                <FileIcon className="h-6 w-6 text-muted-foreground" />
+                                getFileIcon(file.name)
                             )}
                             <div>
                                 <p className="font-semibold truncate max-w-[120px] text-xs">{file.name}</p>
@@ -344,7 +357,7 @@ export function ManagePane() {
                             </div>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                           {isImageFile(file.name) ? (
+                           {isImageFile(file.name) || isVideoFile(file.name) || isAudioFile(file.name) ? (
                                 <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setViewingFile(file)}>
                                     <Eye className="h-3 w-3"/>
                                 </Button>
@@ -551,10 +564,28 @@ export function ManagePane() {
         )}
         {viewingFile && (
           <Dialog open={!!viewingFile} onOpenChange={() => setViewingFile(null)}>
-              <DialogContent className="max-w-3xl p-0">
-                  <div className="relative w-full h-full">
-                      <Image src={viewingFile.url} alt={viewingFile.name} layout="responsive" width={16} height={9} className="object-contain" />
-                  </div>
+              <DialogContent className="max-w-3xl p-2">
+                  <DialogHeader>
+                      <DialogTitle className="text-base">{viewingFile.name}</DialogTitle>
+                  </DialogHeader>
+                   <div className="flex items-center justify-center p-4">
+                     {isImageFile(viewingFile.name) && (
+                         <Image src={viewingFile.url} alt={viewingFile.name} width={800} height={600} className="object-contain max-h-[70vh] rounded" />
+                     )}
+                     {isVideoFile(viewingFile.name) && (
+                         <video src={viewingFile.url} controls className="max-h-[70vh] rounded w-full">
+                             Your browser does not support the video tag.
+                         </video>
+                     )}
+                      {isAudioFile(viewingFile.name) && (
+                         <audio src={viewingFile.url} controls className="w-full">
+                             Your browser does not support the audio element.
+                         </audio>
+                     )}
+                   </div>
+                  <DialogFooter>
+                       <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setViewingFile(null)}>Close</Button>
+                  </DialogFooter>
               </DialogContent>
           </Dialog>
         )}
