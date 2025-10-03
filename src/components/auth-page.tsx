@@ -30,9 +30,7 @@ const createSchema = z.object({
   userId: z.string().length(6, "ID must be 6 digits.").regex(/^\d{6}$/, "ID must be numeric."),
   username: z.string().optional(),
   email: z.string().email("Invalid email address.").optional().or(z.literal('')),
-  terms: z.literal<boolean>(true, {
-    errorMap: () => ({ message: "You must accept the terms to create an account." }),
-  }),
+  terms: z.boolean(),
 });
 
 // Schema for existing user login
@@ -185,12 +183,11 @@ export function AuthPage() {
                     >
                       I agree to the <Button variant="link" type="button" className="p-0 h-auto" onClick={() => setTermsOpen(true)}>Terms & Privacy</Button>
                     </label>
-                    {createForm.formState.errors.terms && <p className="text-sm text-destructive">{createForm.formState.errors.terms.message}</p>}
                   </div>
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" disabled={isPending || !createForm.watch("terms")} className="w-full">
+                <Button type="submit" disabled={isPending} className="w-full">
                     <UserPlus className="mr-2 h-4 w-4" />
                     {isPending ? "Creating..." : "Create Account"}
                 </Button>
