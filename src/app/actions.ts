@@ -1,0 +1,170 @@
+"use server";
+
+import { db } from "@/lib/firebase";
+import { get, ref, set, update, push, remove } from "firebase/database";
+import { revalidatePath } from "next/cache";
+
+type FormState = {
+  success: boolean;
+  message: string;
+};
+
+const ONE_GB = 1073741824;
+
+export async function loginOrCreateUser(
+  userId: string,
+  username: string,
+  email: string
+): Promise<FormState> {
+  if (!/^\d{6}$/.test(userId)) {
+    return { success: false, message: "Please enter a valid 6-digit numeric ID" };
+  }
+
+  try {
+    const userRef = ref(db, `users/${userId}`);
+    const snapshot = await get(userRef);
+
+    if (!snapshot.exists()) {
+      await set(userRef, {
+        createdAt: Date.now(),
+        username: username || null,
+        email: email || null,
+        usageBytes: 0,
+      });
+    } else {
+      const updates: { username?: string; email?: string } = {};
+      if (username) updates.username = username;
+      if (email) updates.email = email;
+      if (Object.keys(updates).length > 0) {
+        await update(userRef, updates);
+      }
+    }
+    revalidatePath("/");
+    return { success: true, message: `Welcome, ${userId}!` };
+  } catch (error) {
+    console.error(error);
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return { success: false, message: `Failed to login: ${errorMessage}` };
+  }
+}
+
+export async function saveDiaryEntry(
+  prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const text = formData.get("text") as string;
+  const userId = formData.get("userId") as string;
+
+  if (!text || !userId) {
+    return { success: false, message: "Missing required fields." };
+  }
+  
+  try {
+    const diaryRef = ref(db, `users/${userId}/diary`);
+    const newEntryRef = push(diaryRef);
+    await set(newEntryRef, {
+      text,
+      timestamp: Date.now(),
+    });
+    revalidatePath("/");
+    return { success: true, message: "Diary entry saved." };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return { success: false, message: `Failed to save diary: ${errorMessage}` };
+  }
+}
+
+async function uploadToCatbox(file: File): Promise<string> {
+    const fd = new FormData();
+    fd.append('reqtype','fileupload');
+    fd.append('fileToUpload', file, file.name);
+
+    const resp = await fetch('https://catbox.moe/user/api.php', { method:'POST', body: fd });
+    if(!resp.ok) throw new Error(`Catbox upload failed: ${resp.statusText}`);
+    
+    const text = await resp.text();
+    if(!text.startsWith('http')) throw new Error(`Unexpected Catbox response: ${text}`);
+
+    return text.trim();
+}
+
+export async function uploadFileAndSave(
+  prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const file = formData.get("file") as File;
+  const userId = formData.get("userId") as string;
+
+  if (!file || !userId) {
+    return { success: false, message: "File and User ID are required." };
+  }
+  
+  if (file.size === 0) {
+    return { success: false, message: "Cannot upload an empty file." };
+  }
+
+  try {
+    // Check quota
+    const usageRef = ref(db, `users/${userId}/usageBytes`);
+    const usageSnapshot = await get(usageRef);
+    const currentUsage = usageSnapshot.val() || 0;
+    const isPremium = (await get(ref(db, `users/${userId}/premium`))).val() === true;
+    const quota = isPremium ? 2 * ONE_GB : ONE_GB;
+
+    if (currentUsage + file.size > quota) {
+      return { success: false, message: "Storage limit exceeded. Please upgrade to premium or delete files." };
+    }
+
+    const url = await uploadToCatbox(file);
+    
+    const fileRecord = {
+      name: file.name,
+      size: file.size,
+      url,
+      timestamp: Date.now(),
+    };
+
+    const filesRef = ref(db, `users/${userId}/files`);
+    const newFileRef = push(filesRef);
+    await set(newFileRef, fileRecord);
+    
+    await set(usageRef, currentUsage + file.size);
+    
+    revalidatePath("/");
+    return { success: true, message: "File uploaded successfully." };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return { success: false, message: `Upload failed: ${errorMessage}` };
+  }
+}
+
+export async function deleteItem(userId: string, itemType: 'diary' | 'files', itemId: string): Promise<FormState> {
+  if (!userId || !itemType || !itemId) {
+    return { success: false, message: "Missing required information for deletion." };
+  }
+
+  try {
+    const itemRef = ref(db, `users/${userId}/${itemType}/${itemId}`);
+    
+    if (itemType === 'files') {
+      const fileSnapshot = await get(itemRef);
+      if (fileSnapshot.exists()) {
+        const fileData = fileSnapshot.val();
+        const fileSize = fileData.size || 0;
+        
+        const usageRef = ref(db, `users/${userId}/usageBytes`);
+        const usageSnapshot = await get(usageRef);
+        const currentUsage = usageSnapshot.val() || 0;
+        
+        await set(usageRef, Math.max(0, currentUsage - fileSize));
+      }
+    }
+
+    await remove(itemRef);
+    revalidatePath("/");
+    return { success: true, message: "Item deleted successfully." };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return { success: false, message: `Deletion failed: ${errorMessage}` };
+  }
+}
