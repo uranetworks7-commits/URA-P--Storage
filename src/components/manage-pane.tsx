@@ -243,9 +243,13 @@ export function ManagePane() {
         } else {
             throw new Error(result.message);
         }
-      } catch (e) {
-        console.error("Failed to import file:", file.name, e);
-        toast({ variant: "destructive", title: "Import Error", description: `Could not import file: ${file.name}.` });
+      } catch (error) {
+        console.error("Failed to import file:", file.name, error);
+        toast({
+          variant: "destructive",
+          title: "Import Error",
+          description: `Could not import file: ${file.name}. It may no longer be available.`,
+        });
       }
     }
     
@@ -357,17 +361,9 @@ export function ManagePane() {
                             </div>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                           {isImageFile(file.name) || isVideoFile(file.name) || isAudioFile(file.name) ? (
-                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setViewingFile(file)}>
-                                    <Eye className="h-3 w-3"/>
-                                </Button>
-                           ) : (
-                                <Button asChild variant="outline" size="icon" className="h-6 w-6">
-                                    <a href={file.url} target="_blank" rel="noopener noreferrer">
-                                        <ExternalLink className="h-3 w-3"/>
-                                    </a>
-                                </Button>
-                           )}
+                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setViewingFile(file)}>
+                                <Eye className="h-3 w-3"/>
+                            </Button>
                             <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => downloadFile(file)}>
                                 <Download className="h-3 w-3" />
                             </Button>
@@ -582,6 +578,20 @@ export function ManagePane() {
                              Your browser does not support the audio element.
                          </audio>
                      )}
+                      {!isImageFile(viewingFile.name) && !isVideoFile(viewingFile.name) && !isAudioFile(viewingFile.name) && (
+                        <div className="flex flex-col items-center justify-center gap-4 p-8 bg-secondary/30 rounded-lg">
+                            <FileIcon className="h-16 w-16 text-muted-foreground" />
+                            <div className="text-center text-sm">
+                                <p className="font-semibold">{viewingFile.name}</p>
+                                <p className="text-muted-foreground">{formatBytes(viewingFile.size)}</p>
+                                <p className="text-muted-foreground">{viewingFile.type}</p>
+                            </div>
+                            <Button size="sm" className="h-8 text-xs" onClick={() => downloadFile(viewingFile)}>
+                                <Download className="mr-2 h-3 w-3" />
+                                Download File
+                            </Button>
+                        </div>
+                      )}
                    </div>
                   <DialogFooter>
                        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setViewingFile(null)}>Close</Button>
