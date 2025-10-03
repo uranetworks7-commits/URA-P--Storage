@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { uploadFileAndSave } from "@/app/actions";
@@ -25,7 +25,7 @@ const initialState: FormState = {
 
 export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
   const { userId } = useAuth();
-  const [state, formAction] = useFormState(uploadFileAndSave, initialState);
+  const [state, formAction] = useActionState(uploadFileAndSave, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
