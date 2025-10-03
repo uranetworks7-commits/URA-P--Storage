@@ -190,7 +190,8 @@ export async function uploadFileFromUrlAndSave(
     }
     const blob = await fileResponse.blob();
     const fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1) || "untitled";
-    const file = new File([blob], fileName, { type: blob.type });
+    const fileType = blob.type || 'application/octet-stream';
+    const file = new File([blob], fileName, { type: fileType });
 
      // Check quota
     const usageRef = ref(db, `users/${userId}/usageBytes`);
@@ -210,7 +211,7 @@ export async function uploadFileFromUrlAndSave(
       size: file.size,
       url,
       timestamp: Date.now(),
-      type: file.type || 'application/octet-stream'
+      type: fileType
     };
 
     const filesRef = ref(db, `users/${userId}/files`);

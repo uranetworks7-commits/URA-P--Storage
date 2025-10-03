@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -40,7 +41,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox, Eye, Film, Music } from "lucide-react";
+import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox, Eye, Film, Music, FileQuestion } from "lucide-react";
 import Image from "next/image";
 
 type ItemToDelete = {
@@ -295,15 +296,18 @@ export function ManagePane() {
     </AlertDialog>
   );
 
-  const getFileIcon = (fileName: string) => {
-    if (isImageFile(fileName)) {
+  const getFileIcon = (file: StoredFile) => {
+    if (isImageFile(file.name)) {
       return null;
     }
-    if (isVideoFile(fileName)) {
+    if (isVideoFile(file.name)) {
       return <Film className="h-6 w-6 text-muted-foreground" />;
     }
-    if (isAudioFile(fileName)) {
+    if (isAudioFile(file.name)) {
       return <Music className="h-6 w-6 text-muted-foreground" />;
+    }
+    if (file.type === 'application/octet-stream') {
+        return <FileQuestion className="h-6 w-6 text-muted-foreground" />;
     }
     return <FileIcon className="h-6 w-6 text-muted-foreground" />;
   }
@@ -353,7 +357,7 @@ export function ManagePane() {
                             {isImageFile(file.name) ? (
                                 <Image src={file.url} alt={file.name} width={32} height={32} className="object-cover rounded-sm h-8 w-8" />
                             ) : (
-                                getFileIcon(file.name)
+                                getFileIcon(file)
                             )}
                             <div>
                                 <p className="font-semibold truncate max-w-[120px] text-xs">{file.name}</p>
@@ -580,7 +584,7 @@ export function ManagePane() {
                      )}
                       {!isImageFile(viewingFile.name) && !isVideoFile(viewingFile.name) && !isAudioFile(viewingFile.name) && (
                         <div className="flex flex-col items-center justify-center gap-4 p-8 bg-secondary/30 rounded-lg">
-                            <FileIcon className="h-16 w-16 text-muted-foreground" />
+                            {viewingFile.type === 'application/octet-stream' ? <FileQuestion className="h-16 w-16 text-muted-foreground" /> : <FileIcon className="h-16 w-16 text-muted-foreground" />}
                             <div className="text-center text-sm">
                                 <p className="font-semibold">{viewingFile.name}</p>
                                 <p className="text-muted-foreground">{formatBytes(viewingFile.size)}</p>
