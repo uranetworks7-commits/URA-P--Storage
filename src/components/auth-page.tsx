@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useFormState } from "react-dom";
+import { useState, useEffect, useActionState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -46,7 +45,7 @@ export function AuthPage() {
     },
   });
 
-  const [formState, formAction] = useFormState(async (_: any, data: FormData) => {
+  const [formState, formAction] = useActionState(async (_: any, data: FormData) => {
     const result = await loginOrCreateUser(data.userId, data.username || '', data.email || '');
     return result;
   }, { success: false, message: "" });
