@@ -40,7 +40,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Book, File, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle } from "lucide-react";
+import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle } from "lucide-react";
 
 type ItemToDelete = {
   id: string;
@@ -325,7 +325,7 @@ export function ManagePane() {
             </ScrollArea>
           </div>
           <div>
-            <h3 className="font-semibold mb-2 flex items-center gap-2"><File className="h-5 w-5"/>Uploaded Files</h3>
+            <h3 className="font-semibold mb-2 flex items-center gap-2"><FileIcon className="h-5 w-5"/>Uploaded Files</h3>
              <ScrollArea className="h-72 rounded-md border p-4">
               {files.length > 0 ? files.map(([id, file]: [string, StoredFile]) => (
                 <div key={id} className="group mb-2 last:mb-0">
