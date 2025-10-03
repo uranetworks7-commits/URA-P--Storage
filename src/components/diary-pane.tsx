@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { saveDiaryEntry } from "@/app/actions";
@@ -23,7 +23,7 @@ const initialState: FormState = {
 
 export function DiaryPane() {
   const { userId } = useAuth();
-  const [state, formAction] = useFormState(saveDiaryEntry, initialState);
+  const [state, formAction] = useActionState(saveDiaryEntry, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
 
