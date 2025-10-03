@@ -285,32 +285,32 @@ export function ManagePane() {
 
   return (
     <Card>
-      <CardHeader className="p-4">
-        <CardTitle className="font-headline text-lg flex items-center gap-2">
-            <Database />
+      <CardHeader className="p-3">
+        <CardTitle className="font-headline text-base flex items-center gap-2">
+            <Database className="h-4 w-4" />
             Manage Your Data
         </CardTitle>
         <CardDescription className="text-xs">
           View, edit, or delete your entries and files.
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="grid md:grid-cols-2 gap-4">
+      <CardContent className="p-3 pt-0">
+        <div className="grid md:grid-cols-2 gap-3">
           <div>
-            <h3 className="font-semibold mb-2 text-sm flex items-center gap-2"><Book className="h-4 w-4"/>Diary Entries</h3>
-            <ScrollArea className="h-60 rounded-md border p-2">
+            <h3 className="font-semibold mb-1 text-xs flex items-center gap-2"><Book className="h-3 w-3"/>Diary Entries</h3>
+            <ScrollArea className="h-48 rounded-md border p-1">
               {diaryEntries.length > 0 ? diaryEntries.map(([id, entry]: [string, DiaryEntry]) => (
                 <div key={id} className="group mb-1 last:mb-0">
                     <div className="flex justify-between items-start text-xs p-1">
                         <div>
-                            <p className="font-semibold">{new Date(entry.timestamp).toLocaleString()}</p>
-                            <p className="text-muted-foreground truncate max-w-[150px]">{entry.text}</p>
+                            <p className="font-semibold text-xs">{new Date(entry.timestamp).toLocaleString()}</p>
+                            <p className="text-muted-foreground truncate max-w-[120px] text-xs">{entry.text}</p>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setViewingEntry(entry)}><FolderOpen className="h-3 w-3"/></Button>
-                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setEditingEntry({ id, data: entry })}><Pencil className="h-3 w-3"/></Button>
-                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => downloadDiaryEntry(entry)}><Download className="h-3 w-3"/></Button>
-                            <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => setItemToDelete({ id, type: 'diary', data: entry })}><Trash2 className="h-3 w-3" /></Button>
+                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setViewingEntry(entry)}><FolderOpen className="h-3 w-3"/></Button>
+                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setEditingEntry({ id, data: entry })}><Pencil className="h-3 w-3"/></Button>
+                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => downloadDiaryEntry(entry)}><Download className="h-3 w-3"/></Button>
+                            <Button variant="destructive" size="icon" className="h-6 w-6" onClick={() => setItemToDelete({ id, type: 'diary', data: entry })}><Trash2 className="h-3 w-3" /></Button>
                         </div>
                     </div>
                     <Separator className="my-1" />
@@ -319,25 +319,25 @@ export function ManagePane() {
             </ScrollArea>
           </div>
           <div>
-            <h3 className="font-semibold mb-2 text-sm flex items-center gap-2"><FileIcon className="h-4 w-4"/>Uploaded Files</h3>
-             <ScrollArea className="h-60 rounded-md border p-2">
+            <h3 className="font-semibold mb-1 text-xs flex items-center gap-2"><FileIcon className="h-3 w-3"/>Uploaded Files</h3>
+             <ScrollArea className="h-48 rounded-md border p-1">
               {files.length > 0 ? files.map(([id, file]: [string, StoredFile]) => (
                 <div key={id} className="group mb-1 last:mb-0">
                     <div className="flex justify-between items-center text-xs p-1">
                         <div>
-                            <p className="font-semibold truncate max-w-[150px]">{file.name}</p>
-                            <p className="text-muted-foreground">{formatBytes(file.size)} &middot; {new Date(file.timestamp).toLocaleDateString()}</p>
+                            <p className="font-semibold truncate max-w-[120px] text-xs">{file.name}</p>
+                            <p className="text-muted-foreground text-xs">{formatBytes(file.size)} &middot; {new Date(file.timestamp).toLocaleDateString()}</p>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button asChild variant="outline" size="icon" className="h-7 w-7">
+                            <Button asChild variant="outline" size="icon" className="h-6 w-6">
                                 <a href={file.url} target="_blank" rel="noopener noreferrer">
                                     <ExternalLink className="h-3 w-3"/>
                                 </a>
                             </Button>
-                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => downloadFile(file)}>
+                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => downloadFile(file)}>
                                 <Download className="h-3 w-3" />
                             </Button>
-                            <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => setItemToDelete({ id, type: 'files', data: file })}><Trash2 className="h-3 w-3" /></Button>
+                            <Button variant="destructive" size="icon" className="h-6 w-6" onClick={() => setItemToDelete({ id, type: 'files', data: file })}><Trash2 className="h-3 w-3" /></Button>
                         </div>
                     </div>
                     <Separator className="my-1" />
@@ -347,23 +347,23 @@ export function ManagePane() {
           </div>
         </div>
         
-        <Separator className="my-4" />
+        <Separator className="my-3" />
         <div>
-            <h3 className="font-semibold mb-2 text-sm flex items-center gap-2"><FolderOpen className="h-4 w-4"/>Local Folder</h3>
-            <div className="p-3 border rounded-lg bg-secondary/30 flex items-center justify-center space-x-2">
+            <h3 className="font-semibold mb-1 text-xs flex items-center gap-2"><FolderOpen className="h-4 w-4"/>Local Folder</h3>
+            <div className="p-2 border rounded-lg bg-secondary/30 flex items-center justify-center space-x-2">
                 <Dialog open={isImportedFolderOpen} onOpenChange={setImportedFolderOpen}>
                     <DialogTrigger asChild>
-                        <Button variant="outline" size="sm"><Inbox className="mr-2 h-4 w-4"/> My Imported Folder</Button>
+                        <Button variant="outline" size="sm" className="h-8 text-xs"><Inbox className="mr-2 h-3 w-3"/> My Imported Folder</Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-3xl">
+                    <DialogContent className="max-w-2xl">
                         <DialogHeader>
-                            <DialogTitle>My Imported Folder</DialogTitle>
-                            <DialogDescription>Data you have imported from other users.</DialogDescription>
+                            <DialogTitle className="text-base">My Imported Folder</DialogTitle>
+                            <DialogDescription className="text-xs">Data you have imported from other users.</DialogDescription>
                         </DialogHeader>
-                        <div className="grid md:grid-cols-2 gap-4 max-h-[50vh]">
+                        <div className="grid md:grid-cols-2 gap-3 max-h-[60vh]">
                             <div>
-                                <h4 className="font-semibold mb-2 text-sm">Diary Entries ({importedItems.diary.length})</h4>
-                                <ScrollArea className="h-60 rounded-md border p-2">
+                                <h4 className="font-semibold mb-2 text-xs">Diary Entries ({importedItems.diary.length})</h4>
+                                <ScrollArea className="h-48 rounded-md border p-2">
                                 {importedItems.diary.length > 0 ? importedItems.diary.map((entry, index) => (
                                     <div key={`imported-diary-${index}`} className="group mb-1 last:mb-0">
                                         <div className="flex justify-between items-start text-xs p-1">
@@ -372,8 +372,8 @@ export function ManagePane() {
                                                 <p className="text-muted-foreground truncate max-w-xs">{entry.text}</p>
                                             </div>
                                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setViewingEntry(entry)}><FolderOpen className="h-3 w-3"/></Button>
-                                                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => downloadDiaryEntry(entry)}><Download className="h-3 w-3"/></Button>
+                                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setViewingEntry(entry)}><FolderOpen className="h-3 w-3"/></Button>
+                                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => downloadDiaryEntry(entry)}><Download className="h-3 w-3"/></Button>
                                             </div>
                                         </div>
                                         {index < importedItems.diary.length - 1 && <Separator className="my-1" />}
@@ -382,18 +382,18 @@ export function ManagePane() {
                                 </ScrollArea>
                             </div>
                             <div>
-                                <h4 className="font-semibold mb-2 text-sm">Files ({importedItems.files.length})</h4>
-                                <ScrollArea className="h-60 rounded-md border p-2">
+                                <h4 className="font-semibold mb-2 text-xs">Files ({importedItems.files.length})</h4>
+                                <ScrollArea className="h-48 rounded-md border p-2">
                                 {importedItems.files.length > 0 ? importedItems.files.map((file, index) => (
                                      <div key={`imported-file-${index}`} className="group mb-1 last:mb-0">
                                         <div className="flex justify-between items-center text-xs p-1">
                                             <div>
-                                                <p className="font-semibold truncate max-w-[200px]">{file.name}</p>
+                                                <p className="font-semibold truncate max-w-[150px]">{file.name}</p>
                                                 <p className="text-muted-foreground">{formatBytes(file.size)}</p>
                                             </div>
                                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Button asChild variant="outline" size="icon" className="h-7 w-7"><a href={file.url} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-3 w-3"/></a></Button>
-                                                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => downloadFile(file)}><Download className="h-3 w-3" /></Button>
+                                                <Button asChild variant="outline" size="icon" className="h-6 w-6"><a href={file.url} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-3 w-3"/></a></Button>
+                                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => downloadFile(file)}><Download className="h-3 w-3" /></Button>
                                             </div>
                                         </div>
                                         {index < importedItems.files.length - 1 && <Separator className="my-1" />}
@@ -402,27 +402,27 @@ export function ManagePane() {
                                 </ScrollArea>
                             </div>
                         </div>
-                        <DialogFooter>
-                            <Button variant="secondary" onClick={() => setImportedFolderOpen(false)}>Close</Button>
+                        <DialogFooter className="mt-2">
+                            <Button variant="secondary" size="sm" className="h-8 text-xs" onClick={() => setImportedFolderOpen(false)}>Close</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
                 
                 <Dialog open={isShareDialogOpen} onOpenChange={(open) => { setShareDialogOpen(open); if(!open) { setShareCode(''); setSelectedDiary({}); setSelectedFiles({});} }}>
                   <DialogTrigger asChild>
-                    <Button size="sm"><Share2 className="mr-2 h-4 w-4" /> Share</Button>
+                    <Button size="sm" className="h-8 text-xs"><Share2 className="mr-2 h-3 w-3" /> Share</Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent className="max-w-xl">
                     <DialogHeader>
-                      <DialogTitle>Share Your Data</DialogTitle>
-                      <DialogDescription>Select items and generate a share code.</DialogDescription>
+                      <DialogTitle className="text-base">Share Your Data</DialogTitle>
+                      <DialogDescription className="text-xs">Select items and generate a share code.</DialogDescription>
                     </DialogHeader>
                     {!shareCode ? (
                         <>
-                        <div className="grid grid-cols-2 gap-4 max-h-[50vh]">
+                        <div className="grid grid-cols-2 gap-3 max-h-[50vh]">
                             <div className="space-y-1">
                                 <Label className="text-xs">Diary Entries</Label>
-                                <ScrollArea className="h-60 rounded-md border p-2">
+                                <ScrollArea className="h-48 rounded-md border p-2">
                                   {diaryEntries.map(([id, entry]) => (
                                     <div key={id} className="flex items-center space-x-2 p-1">
                                       <Checkbox id={`diary-${id}`} onCheckedChange={(checked) => setSelectedDiary(prev => ({ ...prev, [id]: !!checked }))} />
@@ -433,7 +433,7 @@ export function ManagePane() {
                             </div>
                              <div className="space-y-1">
                                 <Label className="text-xs">Files</Label>
-                                <ScrollArea className="h-60 rounded-md border p-2">
+                                <ScrollArea className="h-48 rounded-md border p-2">
                                   {files.map(([id, file]) => (
                                     <div key={id} className="flex items-center space-x-2 p-1">
                                       <Checkbox id={`file-${id}`} onCheckedChange={(checked) => setSelectedFiles(prev => ({...prev, [id]: !!checked }))} />
@@ -443,18 +443,18 @@ export function ManagePane() {
                                 </ScrollArea>
                             </div>
                         </div>
-                        <DialogFooter>
-                            <Button onClick={handleGenerateShareCode}>Generate Code</Button>
+                        <DialogFooter className="mt-2">
+                            <Button onClick={handleGenerateShareCode} size="sm" className="h-8 text-xs">Generate Code</Button>
                         </DialogFooter>
                         </>
                     ) : (
                         <div className="space-y-2">
                             <Label className="text-xs">Your Share Code</Label>
-                            <Textarea readOnly value={shareCode} rows={6} className="font-mono text-xs"/>
+                            <Textarea readOnly value={shareCode} rows={5} className="font-mono text-xs"/>
                             <div className="flex items-center justify-between">
                                 <p className="text-xs text-muted-foreground">Copy this code to share.</p>
-                                <Button size="sm" onClick={() => { navigator.clipboard.writeText(shareCode); toast({ title: "Copied!", description: "Share code copied." })}}>
-                                    <Copy className="mr-2 h-4 w-4"/> Copy
+                                <Button size="sm" className="h-8 text-xs" onClick={() => { navigator.clipboard.writeText(shareCode); toast({ title: "Copied!", description: "Share code copied." })}}>
+                                    <Copy className="mr-2 h-3 w-3"/> Copy
                                 </Button>
                             </div>
                         </div>
@@ -464,37 +464,38 @@ export function ManagePane() {
 
                 <Dialog open={isImportDialogOpen} onOpenChange={(open) => { setImportDialogOpen(open); if(!open) { setImportCode(''); setParsedImportData(null); } }}>
                   <DialogTrigger asChild>
-                    <Button variant="secondary" size="sm"><Upload className="mr-2 h-4 w-4"/> Import</Button>
+                    <Button variant="secondary" size="sm" className="h-8 text-xs"><Upload className="mr-2 h-3 w-3"/> Import</Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Import Data</DialogTitle>
-                      <DialogDescription>Paste a share code to import data.</DialogDescription>
+                      <DialogTitle className="text-base">Import Data</DialogTitle>
+                      <DialogDescription className="text-xs">Paste a share code to import data.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-2">
                       <Textarea 
                         placeholder="Paste your share code here..." 
                         value={importCode} 
                         onChange={(e) => setImportCode(e.target.value)}
-                        rows={4}
+                        rows={3}
+                        className="text-xs"
                       />
-                      <Button onClick={handleParseImportCode} size="sm" disabled={!importCode}>Verify Code</Button>
+                      <Button onClick={handleParseImportCode} size="sm" className="h-8 text-xs" disabled={!importCode}>Verify Code</Button>
                     </div>
                     {parsedImportData && (
-                        <div className="space-y-3 pt-3 border-t">
-                            <h4 className="font-semibold text-sm">Data to Import</h4>
+                        <div className="space-y-2 pt-2 border-t">
+                            <h4 className="font-semibold text-xs">Data to Import</h4>
                             <p className="text-xs"><span className="font-bold">{parsedImportData.diary.length}</span> diary entries</p>
                             <p className="text-xs"><span className="font-bold">{parsedImportData.files.length}</span> files</p>
-                            <Alert variant="destructive" className="p-3">
+                            <Alert variant="destructive" className="p-2">
                                 <AlertCircle className="h-4 w-4" />
-                                <AlertTitle className="text-sm">Warning</AlertTitle>
+                                <AlertTitle className="text-xs font-bold">Warning</AlertTitle>
                                 <AlertDescription className="text-xs">
                                     Importing uses your storage quota and cannot be easily undone.
                                 </AlertDescription>
                             </Alert>
-                             <DialogFooter>
-                                <Button variant="outline" size="sm" onClick={() => { setImportCode(''); setParsedImportData(null); }}>Clear</Button>
-                                <Button onClick={handleFinalizeImport} size="sm" disabled={isImporting}>
+                             <DialogFooter className="mt-2">
+                                <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { setImportCode(''); setParsedImportData(null); }}>Clear</Button>
+                                <Button onClick={handleFinalizeImport} size="sm" className="h-8 text-xs" disabled={isImporting}>
                                     {isImporting ? "Importing..." : `Import ${parsedImportData.diary.length + parsedImportData.files.length} items`}
                                 </Button>
                             </DialogFooter>
@@ -509,18 +510,18 @@ export function ManagePane() {
         <DeleteDialog />
         {viewingEntry && (
           <Dialog open={!!viewingEntry} onOpenChange={() => setViewingEntry(null)}>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Diary Entry</DialogTitle>
-                <DialogDescription>{new Date(viewingEntry.timestamp).toLocaleString()}</DialogDescription>
+                <DialogTitle className="text-base">Diary Entry</DialogTitle>
+                <DialogDescription className="text-xs">{new Date(viewingEntry.timestamp).toLocaleString()}</DialogDescription>
               </DialogHeader>
-              <ScrollArea className="max-h-[50vh] rounded-md border p-3 my-2">
+              <ScrollArea className="max-h-[40vh] rounded-md border p-3 my-2">
                 <p className="text-xs whitespace-pre-wrap">{viewingEntry.text}</p>
               </ScrollArea>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setViewingEntry(null)}>Close</Button>
-                <Button onClick={() => downloadDiaryEntry(viewingEntry)}>
-                  <Download className="mr-2 h-4 w-4" />
+                <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setViewingEntry(null)}>Close</Button>
+                <Button size="sm" className="h-8 text-xs" onClick={() => downloadDiaryEntry(viewingEntry)}>
+                  <Download className="mr-2 h-3 w-3" />
                   Download
                 </Button>
               </DialogFooter>
@@ -529,13 +530,13 @@ export function ManagePane() {
         )}
         {editingEntry && (
           <Dialog open={!!editingEntry} onOpenChange={() => setEditingEntry(null)}>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-md">
                 <form ref={editFormRef} action={editFormAction}>
                     <input type="hidden" name="userId" value={userId || ""} />
                     <input type="hidden" name="entryId" value={editingEntry.id} />
                     <DialogHeader>
-                        <DialogTitle>Edit Diary Entry</DialogTitle>
-                        <DialogDescription>Last updated: {new Date(editingEntry.data.timestamp).toLocaleString()}</DialogDescription>
+                        <DialogTitle className="text-base">Edit Diary Entry</DialogTitle>
+                        <DialogDescription className="text-xs">Last updated: {new Date(editingEntry.data.timestamp).toLocaleString()}</DialogDescription>
                     </DialogHeader>
                     <div className="py-2">
                         <Label htmlFor="edit-diary-text" className="sr-only">Diary Text</Label>
@@ -544,14 +545,14 @@ export function ManagePane() {
                             name="text"
                             defaultValue={editingEntry.data.text}
                             required
-                            rows={10}
-                            className="max-h-[50vh] text-xs"
+                            rows={8}
+                            className="max-h-[40vh] text-xs"
                         />
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setEditingEntry(null)}>Cancel</Button>
-                        <Button type="submit" disabled={isEditPending}>
-                            <Save className="mr-2 h-4 w-4" />
+                        <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={() => setEditingEntry(null)}>Cancel</Button>
+                        <Button type="submit" size="sm" className="h-8 text-xs" disabled={isEditPending}>
+                            <Save className="mr-2 h-3 w-3" />
                             {isEditPending ? "Saving..." : "Save Changes"}
                         </Button>
                     </DialogFooter>

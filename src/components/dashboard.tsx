@@ -24,12 +24,12 @@ export function Dashboard() {
   const isOverQuota = usage > quota;
 
   return (
-    <div className="max-w-4xl mx-auto p-2 sm:p-4">
-      <header className="flex items-center justify-between mb-4">
+    <div className="max-w-lg mx-auto p-1 sm:p-2">
+      <header className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <Logo />
+          <Logo className="h-8 w-8"/>
           <div>
-            <h1 className="text-lg md:text-xl font-bold font-headline">
+            <h1 className="text-base md:text-lg font-bold font-headline">
               Welcome
             </h1>
             <p className="text-muted-foreground text-xs">
@@ -38,35 +38,35 @@ export function Dashboard() {
             </p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={logout}>
-          <LogOut className="mr-1 h-4 w-4" />
+        <Button variant="ghost" size="sm" onClick={logout} className="h-8">
+          <LogOut className="mr-1 h-3 w-3" />
           Logout
         </Button>
       </header>
 
       <main>
         <Tabs defaultValue="diary" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="diary" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-900">New Diary Entry</TabsTrigger>
-            <TabsTrigger value="files" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-900">Upload File</TabsTrigger>
-            <TabsTrigger value="manage" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-900">Manage Data</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 h-9">
+            <TabsTrigger value="diary" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-900 text-xs">New Diary Entry</TabsTrigger>
+            <TabsTrigger value="files" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-900 text-xs">Upload File</TabsTrigger>
+            <TabsTrigger value="manage" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-900 text-xs">Manage Data</TabsTrigger>
           </TabsList>
-          <TabsContent value="diary">
+          <TabsContent value="diary" className="mt-2">
             <DiaryPane />
           </TabsContent>
-          <TabsContent value="files">
+          <TabsContent value="files" className="mt-2">
             <FilesPane isOverQuota={isOverQuota} />
           </TabsContent>
-          <TabsContent value="manage">
+          <TabsContent value="manage" className="mt-2">
             <ManagePane />
           </TabsContent>
         </Tabs>
       </main>
 
-      <footer className="mt-6">
+      <footer className="mt-4">
         <Card>
-          <CardHeader className="p-4">
-            <CardTitle className="font-headline text-lg flex items-center justify-between">
+          <CardHeader className="p-3">
+            <CardTitle className="font-headline text-base flex items-center justify-between">
               <span>Usage Information</span>
               <Zap className="h-4 w-4 text-muted-foreground" />
             </CardTitle>
@@ -74,37 +74,37 @@ export function Dashboard() {
               {`Created: ${userData?.createdAt ? new Date(userData.createdAt).toLocaleString() : "-"}`}
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-4 pt-0">
+          <CardContent className="p-3 pt-0">
              <div className="space-y-1">
               <div className="flex justify-between text-xs font-medium">
                 <span>{formatBytes(usage)} used</span>
                 <span className="text-muted-foreground">of {formatBytes(quota)}</span>
               </div>
-              <div className="w-full bg-secondary rounded-full h-2">
+              <div className="w-full bg-secondary rounded-full h-1.5">
                 <div
-                  className="bg-primary h-2 rounded-full transition-all duration-500"
+                  className="bg-primary h-1.5 rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(usagePercentage, 100)}%` }}
                 ></div>
               </div>
             </div>
             {isOverQuota && (
-              <Alert variant="destructive" className="mt-3 p-3">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle className="text-sm">Storage Limit Exceeded</AlertTitle>
+              <Alert variant="destructive" className="mt-2 p-2">
+                <AlertTriangle className="h-3 w-3" />
+                <AlertTitle className="text-xs font-bold">Storage Limit Exceeded</AlertTitle>
                 <AlertDescription className="text-xs">
                   Upgrade or delete files to upload more.
                 </AlertDescription>
               </Alert>
             )}
              {!isPremium && usage > 0.8 * ONE_GB && (
-              <Alert className="mt-3 p-3 border-primary/50 text-primary">
-                <Star className="h-4 w-4 text-primary" />
-                <AlertTitle className="text-sm">Upgrade to Premium</AlertTitle>
+              <Alert className="mt-2 p-2 border-primary/50 text-primary">
+                <Star className="h-3 w-3 text-primary" />
+                <AlertTitle className="text-xs font-bold">Upgrade to Premium</AlertTitle>
                 <AlertDescription className="flex items-center justify-between text-xs">
                   <span>
                     Get an additional 1GB for ₹100.
                   </span>
-                  <Button asChild size="sm">
+                  <Button asChild size="sm" className="h-7 text-xs">
                     <Link href="#">Upgrade Now</Link>
                   </Button>
                 </AlertDescription>

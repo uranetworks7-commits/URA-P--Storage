@@ -44,17 +44,17 @@ export function DiaryPane() {
 
   return (
     <Card>
-      <CardHeader className="p-4">
-        <CardTitle className="font-headline text-lg flex items-center gap-2">
-          <BookMarked />
+      <CardHeader className="p-3">
+        <CardTitle className="font-headline text-base flex items-center gap-2">
+          <BookMarked className="h-4 w-4" />
           New Diary Entry
         </CardTitle>
         <CardDescription className="text-xs">
           Your thoughts are safe here.
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <form ref={formRef} action={formAction} className="space-y-3">
+      <CardContent className="p-3 pt-0">
+        <form ref={formRef} action={formAction} className="space-y-2">
           <input type="hidden" name="userId" value={userId || ""} />
           <div className="space-y-1">
             <Label htmlFor="diary-text" className="text-xs">What's on your mind?</Label>
@@ -63,13 +63,14 @@ export function DiaryPane() {
               name="text"
               placeholder="Today I..."
               required
-              rows={6}
+              rows={4}
+              className="text-xs"
             />
           </div>
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">Entries are encrypted.</p>
-            <Button type="submit" size="sm">
-              <Save className="mr-2 h-4 w-4" />
+            <Button type="submit" size="sm" className="h-8 text-xs">
+              <Save className="mr-2 h-3 w-3" />
               Save Entry
             </Button>
           </div>

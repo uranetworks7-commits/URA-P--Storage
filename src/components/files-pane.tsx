@@ -68,17 +68,17 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
 
   return (
     <Card>
-      <CardHeader className="p-4">
-        <CardTitle className="font-headline text-lg flex items-center gap-2">
-          <UploadCloud />
+      <CardHeader className="p-3">
+        <CardTitle className="font-headline text-base flex items-center gap-2">
+          <UploadCloud className="h-4 w-4" />
           Upload a File
         </CardTitle>
         <CardDescription className="text-xs">
           Files are stored securely via Catbox.
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <form ref={formRef} action={handleFormAction} className="space-y-3">
+      <CardContent className="p-3 pt-0">
+        <form ref={formRef} action={handleFormAction} className="space-y-2">
           <input type="hidden" name="userId" value={userId || ""} />
           <div className="space-y-1">
             <Label htmlFor="file-input" className="text-xs">Select file</Label>
@@ -90,7 +90,7 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
               ref={fileInputRef}
               onChange={handleFileChange}
               disabled={isPending || isOverQuota}
-              className="file:text-primary file:font-semibold h-9 text-xs"
+              className="file:text-primary file:font-semibold h-8 text-xs"
             />
           </div>
 
@@ -100,12 +100,12 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
             </div>
           )}
           
-          {isPending && <Progress value={undefined} className="animate-pulse h-2" />}
+          {isPending && <Progress value={undefined} className="animate-pulse h-1.5" />}
 
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">{isOverQuota ? 'Storage full.' : 'Max 1GB total.'}</p>
-            <Button type="submit" size="sm" disabled={isPending || isOverQuota}>
-              <FileUp className="mr-2 h-4 w-4" />
+            <Button type="submit" size="sm" disabled={isPending || isOverQuota} className="h-8 text-xs">
+              <FileUp className="mr-2 h-3 w-3" />
               {isPending ? "Uploading..." : "Upload & Save"}
             </Button>
           </div>
