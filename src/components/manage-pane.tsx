@@ -42,7 +42,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox, Eye, Film, Music, FileQuestion } from "lucide-react";
+import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox, Eye, Film, Music, FileQuestion, Link as LinkIcon } from "lucide-react";
 import Image from "next/image";
 
 type ItemToDelete = {
@@ -95,6 +95,8 @@ export function ManagePane() {
   const [isImportedFolderOpen, setImportedFolderOpen] = useState(false);
 
   const shareCodeTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const [viewingFileUrl, setViewingFileUrl] = useState<StoredFile | null>(null);
+  const fileUrlTextareaRef = useRef<HTMLTextAreaElement>(null);
 
 
   const [editState, editFormAction, isEditPending] = useActionState(updateDiaryEntry, initialFormState);
@@ -115,6 +117,12 @@ export function ManagePane() {
         shareCodeTextareaRef.current.select();
     }
   }, [shareCode]);
+
+  useEffect(() => {
+    if (viewingFileUrl && fileUrlTextareaRef.current) {
+        fileUrlTextareaRef.current.select();
+    }
+  }, [viewingFileUrl]);
 
 
   const diaryEntries = useMemo(() => userData?.diary ? Object.entries(userData.diary).sort((a, b) => b[1].timestamp - a[1].timestamp) : [], [userData?.diary]);
@@ -391,6 +399,9 @@ export function ManagePane() {
                             </div>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setViewingFileUrl(file)}>
+                                <LinkIcon className="h-3 w-3"/>
+                            </Button>
                             <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setViewingFile(file)}>
                                 <Eye className="h-3 w-3"/>
                             </Button>
@@ -661,10 +672,34 @@ export function ManagePane() {
             </DialogContent>
           </Dialog>
         )}
+        {viewingFileUrl && (
+          <Dialog open={!!viewingFileUrl} onOpenChange={() => setViewingFileUrl(null)}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="text-base">File URL</DialogTitle>
+                    <DialogDescription className="text-xs">
+                        This is the direct URL to your file.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                    <Textarea ref={fileUrlTextareaRef} readOnly value={viewingFileUrl.url} rows={4} className="font-mono text-xs" />
+                    <p className="text-xs text-muted-foreground">The URL is now selected. Press and hold or right-click to copy.</p>
+                </div>
+                 <DialogFooter>
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setViewingFileUrl(null)}>Close</Button>
+                     <Button size="sm" className="h-8 text-xs" onClick={() => { navigator.clipboard.writeText(viewingFileUrl.url); toast({ title: "Copied!", description: "File URL copied to clipboard." })}}>
+                        <Copy className="mr-2 h-3 w-3"/> Copy
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </CardContent>
     </Card>
   );
 }
+
+    
 
     
 
