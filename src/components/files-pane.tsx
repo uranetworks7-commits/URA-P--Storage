@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { uploadFileAndSave } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
@@ -26,16 +25,15 @@ const initialState: FormState = {
 export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
   const { userId } = useAuth();
   const [state, formAction] = useActionState(uploadFileAndSave, initialState);
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
 
   useEffect(() => {
     if (state.message) {
-      setIsSubmitting(false);
       if (state.success) {
         toast({ title: "Success", description: state.message });
         formRef.current?.reset();
@@ -61,14 +59,12 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
       setFileSize(null);
     }
   };
-  
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsSubmitting(true);
-    const formData = new FormData(event.currentTarget);
-    formAction(formData);
-  };
 
+  const handleFormAction = (formData: FormData) => {
+    startTransition(() => {
+      formAction(formData);
+    });
+  };
 
   return (
     <Card>
@@ -82,7 +78,7 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+        <form ref={formRef} action={handleFormAction} className="space-y-4">
           <input type="hidden" name="userId" value={userId || ""} />
           <div className="space-y-2">
             <Label htmlFor="file-input">Select file</Label>
@@ -93,7 +89,7 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
               required
               ref={fileInputRef}
               onChange={handleFileChange}
-              disabled={isSubmitting || isOverQuota}
+              disabled={isPending || isOverQuota}
               className="file:text-primary file:font-semibold"
             />
           </div>
@@ -104,13 +100,13 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
             </div>
           )}
           
-          {isSubmitting && <Progress value={undefined} className="animate-pulse" />}
+          {isPending && <Progress value={undefined} className="animate-pulse" />}
 
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">{isOverQuota ? 'Storage full.' : 'Max 1GB total.'}</p>
-            <Button type="submit" disabled={isSubmitting || isOverQuota}>
+            <Button type="submit" disabled={isPending || isOverQuota}>
               <FileUp className="mr-2 h-4 w-4" />
-              {isSubmitting ? "Uploading..." : "Upload & Save"}
+              {isPending ? "Uploading..." : "Upload & Save"}
             </Button>
           </div>
         </form>
