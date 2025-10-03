@@ -40,7 +40,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle } from "lucide-react";
+import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox } from "lucide-react";
 
 type ItemToDelete = {
   id: string;
@@ -88,6 +88,8 @@ export function ManagePane() {
   const [selectedFiles, setSelectedFiles] = useState<Record<string, boolean>>({});
   const [parsedImportData, setParsedImportData] = useState<SharedData | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [importedItems, setImportedItems] = useState<SharedData>({ diary: [], files: [] });
+  const [isImportedFolderOpen, setImportedFolderOpen] = useState(false);
 
 
   const [editState, editFormAction, isEditPending] = useActionState(updateDiaryEntry, initialFormState);
@@ -207,6 +209,9 @@ export function ManagePane() {
     if (!parsedImportData || !userId) return;
     setIsImporting(true);
 
+    // Keep track of imported items to show in "My Imported Folder"
+    const newlyImported: SharedData = { diary: [], files: [] };
+
     let diarySuccess = 0;
     let filesSuccess = 0;
 
@@ -215,7 +220,10 @@ export function ManagePane() {
       formData.set('userId', userId);
       formData.set('text', entry.text);
       const result = await saveDiaryEntry({ success: false, message: '' }, formData);
-      if (result.success) diarySuccess++;
+      if (result.success) {
+        diarySuccess++;
+        newlyImported.diary.push(entry);
+      }
     }
 
     for (const file of parsedImportData.files) {
@@ -228,12 +236,24 @@ export function ManagePane() {
         formData.set('userId', userId);
         formData.set('file', newFile);
         const result = await uploadFileAndSave({ success: false, message: '' }, formData);
-        if (result.success) filesSuccess++;
+        if (result.success) {
+            filesSuccess++;
+            // This is a bit tricky since the new URL is not returned directly
+            // We will add the original file object, but the URL might become stale if Catbox has impermanent links.
+            // For this demo, it's an acceptable tradeoff.
+            newlyImported.files.push(file);
+        }
       } catch (e) {
         console.error("Failed to import file:", file.name, e);
       }
     }
     
+    // Add to the existing list of imported items
+    setImportedItems(prev => ({
+      diary: [...prev.diary, ...newlyImported.diary],
+      files: [...prev.files, ...newlyImported.files],
+    }));
+
     setIsImporting(false);
     setImportDialogOpen(false);
     setImportCode('');
@@ -242,21 +262,6 @@ export function ManagePane() {
     toast({ title: "Import Complete", description: `Imported ${diarySuccess} diary entries and ${filesSuccess} files.` });
   };
   
-  const downloadAllData = () => {
-    const dataToDownload = { diary: userData?.diary ?? {}, files: userData?.files ?? {} };
-    const jsonString = JSON.stringify(dataToDownload, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ura-private-storage-backup-${userId}-${Date.now()}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast({title: "Download Started", description: "Your data backup is being downloaded."});
-  }
-
 
   // --- Dialog Components ---
   const DeleteDialog = () => (
@@ -358,9 +363,62 @@ export function ManagePane() {
         <div>
             <h3 className="font-semibold mb-4 flex items-center gap-2"><FolderOpen className="h-5 w-5"/>Local Folder</h3>
             <div className="p-4 border rounded-lg bg-secondary/30 flex items-center justify-center space-x-4">
-                <Button variant="outline" onClick={downloadAllData}>
-                    <Download className="mr-2 h-4 w-4"/> Download Backup
-                </Button>
+                <Dialog open={isImportedFolderOpen} onOpenChange={setImportedFolderOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline"><Inbox className="mr-2 h-4 w-4"/> My Imported Folder</Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl">
+                        <DialogHeader>
+                            <DialogTitle>My Imported Folder</DialogTitle>
+                            <DialogDescription>Data you have imported from other users.</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid md:grid-cols-2 gap-6 max-h-[60vh]">
+                            <div>
+                                <h4 className="font-semibold mb-2">Diary Entries ({importedItems.diary.length})</h4>
+                                <ScrollArea className="h-72 rounded-md border p-4">
+                                {importedItems.diary.length > 0 ? importedItems.diary.map((entry, index) => (
+                                    <div key={`imported-diary-${index}`} className="group mb-2 last:mb-0">
+                                        <div className="flex justify-between items-start text-sm">
+                                            <div>
+                                                <p className="font-semibold">{new Date(entry.timestamp).toLocaleString()}</p>
+                                                <p className="text-muted-foreground truncate max-w-xs">{entry.text}</p>
+                                            </div>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setViewingEntry(entry)}><FolderOpen className="h-4 w-4"/></Button>
+                                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => downloadDiaryEntry(entry)}><Download className="h-4 w-4"/></Button>
+                                            </div>
+                                        </div>
+                                        {index < importedItems.diary.length - 1 && <Separator className="my-2" />}
+                                    </div>
+                                )) : <p className="text-sm text-muted-foreground text-center py-4">No imported diary entries.</p>}
+                                </ScrollArea>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold mb-2">Files ({importedItems.files.length})</h4>
+                                <ScrollArea className="h-72 rounded-md border p-4">
+                                {importedItems.files.length > 0 ? importedItems.files.map((file, index) => (
+                                     <div key={`imported-file-${index}`} className="group mb-2 last:mb-0">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <div>
+                                                <p className="font-semibold truncate max-w-[200px]">{file.name}</p>
+                                                <p className="text-muted-foreground">{formatBytes(file.size)}</p>
+                                            </div>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button asChild variant="outline" size="icon" className="h-8 w-8"><a href={file.url} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4"/></a></Button>
+                                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => downloadFile(file)}><Download className="h-4 w-4" /></Button>
+                                            </div>
+                                        </div>
+                                        {index < importedItems.files.length - 1 && <Separator className="my-2" />}
+                                    </div>
+                                )) : <p className="text-sm text-muted-foreground text-center py-4">No imported files.</p>}
+                                </ScrollArea>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="secondary" onClick={() => setImportedFolderOpen(false)}>Close</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
                 
                 <Dialog open={isShareDialogOpen} onOpenChange={(open) => { setShareDialogOpen(open); if(!open) { setShareCode(''); setSelectedDiary({}); setSelectedFiles({});} }}>
                   <DialogTrigger asChild>

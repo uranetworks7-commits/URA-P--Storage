@@ -61,9 +61,13 @@ export function AuthPage() {
 
   // Share action state between forms
   const [formState, formAction, isPending] = React.useActionState(async (_: any, data: FormData) => {
-    const result = await loginOrCreateUser(data.userId, data.username || '', data.email || '');
+    const userId = data.get('userId') as string;
+    const username = data.get('username') as string | undefined;
+    const email = data.get('email') as string | undefined;
+    const result = await loginOrCreateUser(userId, username || '', email || '');
     return result;
   }, { success: false, message: "" });
+
 
   useEffect(() => {
     if (formState.message) {
@@ -115,6 +119,7 @@ export function AuthPage() {
                   <Label htmlFor="login-userId">6-Digit ID</Label>
                   <Input
                     id="login-userId"
+                    name="userId"
                     placeholder="e.g. 123456"
                     maxLength={6}
                     {...loginForm.register("userId")}
@@ -150,6 +155,7 @@ export function AuthPage() {
                   <Label htmlFor="create-userId">Choose Your 6-Digit ID</Label>
                   <Input
                     id="create-userId"
+                    name="userId"
                     placeholder="e.g. 654321"
                     maxLength={6}
                     {...createForm.register("userId")}
@@ -159,16 +165,16 @@ export function AuthPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                     <Label htmlFor="username">Display Name (Optional)</Label>
-                    <Input id="username" placeholder="Your Name" {...createForm.register("username")} />
+                    <Input id="username" name="username" placeholder="Your Name" {...createForm.register("username")} />
                     </div>
                     <div className="space-y-2">
                     <Label htmlFor="email">Email (Optional)</Label>
-                    <Input id="email" type="email" placeholder="you@example.com" {...createForm.register("email")} />
+                    <Input id="email" name="email" type="email" placeholder="you@example.com" {...createForm.register("email")} />
                     {createForm.formState.errors.email && <p className="text-sm text-destructive">{createForm.formState.errors.email.message}</p>}
                     </div>
                 </div>
                 <div className="flex items-start space-x-2">
-                  <Checkbox 
+                  <Checkbox
                     id="terms"
                     {...createForm.register("terms")}
                   />
@@ -201,6 +207,3 @@ export function AuthPage() {
     </div>
   );
 }
-
-// A helper type for combining form data
-type FormData = CreateFormData & LoginFormData;
