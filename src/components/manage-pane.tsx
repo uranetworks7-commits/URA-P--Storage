@@ -187,7 +187,7 @@ export function ManagePane() {
                     <div className="flex justify-between items-center text-sm">
                         <div>
                             <p className="font-semibold truncate max-w-[200px]">{file.name}</p>
-                            <p className="text-muted-foreground">{formatBytes(file.size)}</p>
+                            <p className="text-muted-foreground">{formatBytes(file.size)} &middot; {new Date(file.timestamp).toLocaleDateString()}</p>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button asChild variant="outline" size="sm">
