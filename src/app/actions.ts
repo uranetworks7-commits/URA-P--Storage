@@ -9,6 +9,8 @@ type FormState = {
   message: string;
 };
 
+const URA_ERROR_503 = "URA-FS Error: 503. Service unavailable. Please check your connection or try again later.";
+
 const ONE_GB = 1073741824;
 
 export async function loginOrCreateUser(
@@ -42,9 +44,8 @@ export async function loginOrCreateUser(
     revalidatePath("/");
     return { success: true, message: `Welcome, ${userId}!` };
   } catch (error) {
-    console.error(error);
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    return { success: false, message: `Failed to login: ${errorMessage}` };
+    console.error("Login/Create User Error:", error);
+    return { success: false, message: URA_ERROR_503 };
   }
 }
 
@@ -69,8 +70,8 @@ export async function saveDiaryEntry(
     revalidatePath("/");
     return { success: true, message: "Diary entry saved." };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    return { success: false, message: `Failed to save diary: ${errorMessage}` };
+    console.error("Save Diary Error:", error);
+    return { success: false, message: URA_ERROR_503 };
   }
 }
 
@@ -95,8 +96,8 @@ export async function updateDiaryEntry(
     revalidatePath("/");
     return { success: true, message: "Diary entry updated successfully." };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    return { success: false, message: `Failed to update diary entry: ${errorMessage}` };
+    console.error("Update Diary Error:", error);
+    return { success: false, message: URA_ERROR_503 };
   }
 }
 
@@ -148,6 +149,7 @@ export async function uploadFileAndSave(
       size: file.size,
       url,
       timestamp: Date.now(),
+      type: file.type || 'application/octet-stream'
     };
 
     const filesRef = ref(db, `users/${userId}/files`);
@@ -159,8 +161,8 @@ export async function uploadFileAndSave(
     revalidatePath("/");
     return { success: true, message: "File uploaded successfully." };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    return { success: false, message: `Upload failed: ${errorMessage}` };
+    console.error("Upload File Error:", error);
+    return { success: false, message: URA_ERROR_503 };
   }
 }
 
@@ -190,7 +192,7 @@ export async function deleteItem(userId: string, itemType: 'diary' | 'files', it
     revalidatePath("/");
     return { success: true, message: "Item deleted successfully." };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    return { success: false, message: `Deletion failed: ${errorMessage}` };
+    console.error("Delete Item Error:", error);
+    return { success: false, message: URA_ERROR_503 };
   }
 }

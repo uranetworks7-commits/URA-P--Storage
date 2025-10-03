@@ -17,3 +17,10 @@ export function formatBytes(bytes: number, decimals = 2) {
 
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
+
+export function isImageFile(fileName: string): boolean {
+    if (!fileName) return false;
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
+    const lowercasedName = fileName.toLowerCase();
+    return imageExtensions.some(ext => lowercasedName.endsWith(ext));
+}

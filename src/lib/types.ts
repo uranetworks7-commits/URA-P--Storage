@@ -8,6 +8,7 @@ export interface StoredFile {
   size: number;
   url: string;
   timestamp: number;
+  type: string;
 }
 
 export interface UserData {

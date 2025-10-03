@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import type { DiaryEntry, StoredFile } from "@/lib/types";
-import { formatBytes } from "@/lib/utils";
+import { formatBytes, isImageFile } from "@/lib/utils";
 import { deleteItem, saveDiaryEntry, updateDiaryEntry, uploadFileAndSave } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useRef, useActionState, useEffect, useMemo } from "react";
@@ -40,7 +40,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox } from "lucide-react";
+import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox, Eye } from "lucide-react";
+import Image from "next/image";
 
 type ItemToDelete = {
   id: string;
@@ -73,6 +74,7 @@ export function ManagePane() {
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewingEntry, setViewingEntry] = useState<DiaryEntry | null>(null);
+  const [viewingFile, setViewingFile] = useState<StoredFile | null>(null);
   const [editingEntry, setEditingEntry] = useState<ItemToEdit | null>(null);
   const [itemToDelete, setItemToDelete] = useState<ItemToDelete | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -225,6 +227,9 @@ export function ManagePane() {
     for (const file of parsedImportData.files) {
       try {
         const response = await fetch(file.url);
+        if (!response.ok) {
+           throw new Error(`Failed to fetch file: ${response.statusText}`);
+        }
         const blob = await response.blob();
         const newFile = new File([blob], file.name, { type: blob.type });
 
@@ -235,9 +240,12 @@ export function ManagePane() {
         if (result.success) {
             filesSuccess++;
             newlyImported.files.push(file);
+        } else {
+            throw new Error(result.message);
         }
       } catch (e) {
         console.error("Failed to import file:", file.name, e);
+        toast({ variant: "destructive", title: "Import Error", description: `Could not import file: ${file.name}.` });
       }
     }
     
@@ -324,16 +332,29 @@ export function ManagePane() {
               {files.length > 0 ? files.map(([id, file]: [string, StoredFile]) => (
                 <div key={id} className="group mb-1 last:mb-0">
                     <div className="flex justify-between items-center text-xs p-1">
-                        <div>
-                            <p className="font-semibold truncate max-w-[120px] text-xs">{file.name}</p>
-                            <p className="text-muted-foreground text-xs">{formatBytes(file.size)} &middot; {new Date(file.timestamp).toLocaleDateString()}</p>
+                        <div className="flex items-center gap-2">
+                            {isImageFile(file.name) ? (
+                                <Image src={file.url} alt={file.name} width={32} height={32} className="object-cover rounded-sm h-8 w-8" />
+                            ) : (
+                                <FileIcon className="h-6 w-6 text-muted-foreground" />
+                            )}
+                            <div>
+                                <p className="font-semibold truncate max-w-[120px] text-xs">{file.name}</p>
+                                <p className="text-muted-foreground text-xs">{formatBytes(file.size)} &middot; {new Date(file.timestamp).toLocaleDateString()}</p>
+                            </div>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button asChild variant="outline" size="icon" className="h-6 w-6">
-                                <a href={file.url} target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink className="h-3 w-3"/>
-                                </a>
-                            </Button>
+                           {isImageFile(file.name) ? (
+                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setViewingFile(file)}>
+                                    <Eye className="h-3 w-3"/>
+                                </Button>
+                           ) : (
+                                <Button asChild variant="outline" size="icon" className="h-6 w-6">
+                                    <a href={file.url} target="_blank" rel="noopener noreferrer">
+                                        <ExternalLink className="h-3 w-3"/>
+                                    </a>
+                                </Button>
+                           )}
                             <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => downloadFile(file)}>
                                 <Download className="h-3 w-3" />
                             </Button>
@@ -526,6 +547,15 @@ export function ManagePane() {
                 </Button>
               </DialogFooter>
             </DialogContent>
+          </Dialog>
+        )}
+        {viewingFile && (
+          <Dialog open={!!viewingFile} onOpenChange={() => setViewingFile(null)}>
+              <DialogContent className="max-w-3xl p-0">
+                  <div className="relative w-full h-full">
+                      <Image src={viewingFile.url} alt={viewingFile.name} layout="responsive" width={16} height={9} className="object-contain" />
+                  </div>
+              </DialogContent>
           </Dialog>
         )}
         {editingEntry && (

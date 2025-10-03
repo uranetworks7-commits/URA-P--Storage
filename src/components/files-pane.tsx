@@ -74,7 +74,7 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
           Upload a File
         </CardTitle>
         <CardDescription className="text-xs">
-          Files are stored securely via Catbox.
+          Files are Securely stored in URA Data SERVER.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-3 pt-0">
