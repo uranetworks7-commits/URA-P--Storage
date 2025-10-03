@@ -4,7 +4,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import type { DiaryEntry, StoredFile } from "@/lib/types";
 import { formatBytes, isImageFile, isVideoFile, isAudioFile } from "@/lib/utils";
-import { deleteItem, saveDiaryEntry, updateDiaryEntry, uploadFileAndSave } from "@/app/actions";
+import { deleteItem, saveDiaryEntry, updateDiaryEntry, uploadFileFromUrlAndSave } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useRef, useActionState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -162,8 +162,30 @@ export function ManagePane() {
     URL.revokeObjectURL(url);
   }
 
-  const downloadFile = (file: StoredFile) => {
-    window.open(file.url, '_blank');
+  const downloadFile = async (file: StoredFile) => {
+    try {
+      toast({ title: "Starting download...", description: file.name });
+      const response = await fetch(file.url);
+      if (!response.ok) {
+        throw new Error('Network response was not ok.');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', file.name);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Download failed",
+        description: "Could not download the file. Please try again.",
+      });
+    }
   };
   
   const handleGenerateShareCode = () => {
@@ -227,17 +249,12 @@ export function ManagePane() {
 
     for (const file of parsedImportData.files) {
       try {
-        const response = await fetch(file.url);
-        if (!response.ok) {
-           throw new Error(`Failed to fetch file: ${response.statusText}`);
-        }
-        const blob = await response.blob();
-        const newFile = new File([blob], file.name, { type: blob.type });
-
         const formData = new FormData();
         formData.set('userId', userId);
-        formData.set('file', newFile);
-        const result = await uploadFileAndSave({ success: false, message: '' }, formData);
+        formData.set('url', file.url);
+        
+        const result = await uploadFileFromUrlAndSave({ success: false, message: '' }, formData);
+
         if (result.success) {
             filesSuccess++;
             newlyImported.files.push(file);

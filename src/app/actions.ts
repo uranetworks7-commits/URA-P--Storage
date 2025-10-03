@@ -133,7 +133,7 @@ export async function uploadFileAndSave(
   }
   
   if (file.size > ONE_MB) {
-    return { success: false, message: "File is too large. Max 1MB for direct upload." };
+    return { success: false, message: "File is too large. Max 1MB for direct upload. Please use URL upload for larger files." };
   }
 
   try {
@@ -168,6 +168,9 @@ export async function uploadFileAndSave(
     return { success: true, message: "File uploaded successfully." };
   } catch (error) {
     console.error("Upload File Error:", error);
+    if (error instanceof Error && error.message.includes('File is too large')) {
+      return { success: false, message: "File is too large. Max 1MB for direct upload. Please use URL upload for larger files." };
+    }
     return { success: false, message: URA_ERROR_503 };
   }
 }
@@ -189,7 +192,8 @@ export async function uploadFileFromUrlAndSave(
       return { success: false, message: "Failed to fetch the file from the provided URL." };
     }
     const blob = await fileResponse.blob();
-    const fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1) || "untitled";
+    const urlParts = fileUrl.split('?')[0].split('/');
+    const fileName = urlParts[urlParts.length - 1] || "untitled";
     const fileType = blob.type || 'application/octet-stream';
     const file = new File([blob], fileName, { type: fileType });
 
