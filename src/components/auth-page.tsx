@@ -23,12 +23,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TermsDialog } from "./terms-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, LogIn, UserPlus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Schema for new user creation
 const createSchema = z.object({
   userId: z.string().length(6, "ID must be 6 digits.").regex(/^\d{6}$/, "ID must be numeric."),
   username: z.string().optional(),
   email: z.string().email("Invalid email address.").optional().or(z.literal('')),
+  terms: z.literal<boolean>(true, {
+    errorMap: () => ({ message: "You must accept the terms to create an account." }),
+  }),
 });
 
 // Schema for existing user login
@@ -52,7 +56,7 @@ export function AuthPage() {
 
   const createForm = useForm<CreateFormData>({
     resolver: zodResolver(createSchema),
-    defaultValues: { userId: "", username: "", email: "" },
+    defaultValues: { userId: "", username: "", email: "", terms: false },
   });
 
   // Share action state between forms
@@ -163,9 +167,24 @@ export function AuthPage() {
                     {createForm.formState.errors.email && <p className="text-sm text-destructive">{createForm.formState.errors.email.message}</p>}
                     </div>
                 </div>
+                <div className="flex items-start space-x-2">
+                  <Checkbox 
+                    id="terms"
+                    {...createForm.register("terms")}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="terms"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      I agree to the <Button variant="link" type="button" className="p-0 h-auto" onClick={() => setTermsOpen(true)}>Terms & Privacy</Button>
+                    </label>
+                    {createForm.formState.errors.terms && <p className="text-sm text-destructive">{createForm.formState.errors.terms.message}</p>}
+                  </div>
+                </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" disabled={isPending} className="w-full">
+                <Button type="submit" disabled={isPending || !createForm.watch("terms")} className="w-full">
                     <UserPlus className="mr-2 h-4 w-4" />
                     {isPending ? "Creating..." : "Create Account"}
                 </Button>
@@ -176,7 +195,6 @@ export function AuthPage() {
       </Tabs>
 
       <footer className="mt-8 text-center text-sm text-muted-foreground">
-        <p>By using this service, you agree to our <Button variant="link" className="p-0 h-auto" onClick={() => setTermsOpen(true)}>Terms & Privacy</Button>.</p>
         <p>This is a client-side demo. For production, add server-side security.</p>
       </footer>
       <TermsDialog open={isTermsOpen} onOpenChange={setTermsOpen} />
