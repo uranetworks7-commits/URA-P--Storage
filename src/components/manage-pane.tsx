@@ -501,7 +501,7 @@ export function ManagePane() {
                     ) : (
                         <div className="space-y-2">
                             <Label className="text-xs">Your Share Code</Label>
-                            <Textarea readOnly value={shareCode} rows={5} className="font-mono text-xs"/>
+                            <Textarea readOnly value={shareCode} rows={5} className="font-mono text-xs" onClick={(e) => (e.target as HTMLTextAreaElement).select()}/>
                             <div className="flex items-center justify-between">
                                 <p className="text-xs text-muted-foreground">Copy this code to share.</p>
                                 <Button size="sm" className="h-8 text-xs" onClick={() => { navigator.clipboard.writeText(shareCode); toast({ title: "Copied!", description: "Share code copied." })}}>
@@ -656,3 +656,5 @@ export function ManagePane() {
     </Card>
   );
 }
+
+    
