@@ -121,7 +121,7 @@ export function AuthPage() {
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>Warning</AlertTitle>
                     <AlertDescription>
-                    Keep your ID private — it's the only key to your data.
+                    Do not share your 6-digit ID. Keep it private — it's the only key to your data.
                     </AlertDescription>
                 </Alert>
               </CardContent>
