@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -93,6 +94,8 @@ export function ManagePane() {
   const [importedItems, setImportedItems] = useState<SharedData>({ diary: [], files: [] });
   const [isImportedFolderOpen, setImportedFolderOpen] = useState(false);
 
+  const shareCodeTextareaRef = useRef<HTMLTextAreaElement>(null);
+
 
   const [editState, editFormAction, isEditPending] = useActionState(updateDiaryEntry, initialFormState);
 
@@ -106,6 +109,12 @@ export function ManagePane() {
         }
     }
   }, [editState, toast]);
+
+  useEffect(() => {
+    if (shareCode && shareCodeTextareaRef.current) {
+        shareCodeTextareaRef.current.select();
+    }
+  }, [shareCode]);
 
 
   const diaryEntries = useMemo(() => userData?.diary ? Object.entries(userData.diary).sort((a, b) => b[1].timestamp - a[1].timestamp) : [], [userData?.diary]);
@@ -501,10 +510,10 @@ export function ManagePane() {
                     ) : (
                         <div className="space-y-2">
                             <Label className="text-xs">Your Share Code</Label>
-                            <Textarea readOnly value={shareCode} rows={5} className="font-mono text-xs" onClick={(e) => (e.target as HTMLTextAreaElement).select()}/>
+                            <Textarea ref={shareCodeTextareaRef} readOnly value={shareCode} rows={5} className="font-mono text-xs" />
                             <div className="flex items-center justify-between">
-                                <p className="text-xs text-muted-foreground">Copy this code to share.</p>
-                                <Button size="sm" className="h-8 text-xs" onClick={() => { navigator.clipboard.writeText(shareCode); toast({ title: "Copied!", description: "Share code copied." })}}>
+                                <p className="text-xs text-muted-foreground">This code is now selected. Press and hold to copy.</p>
+                                <Button size="sm" className="h-8 text-xs" onClick={() => { navigator.clipboard.writeText(shareCode); toast({ title: "Copied!", description: "Share code copied to clipboard." })}}>
                                     <Copy className="mr-2 h-3 w-3"/> Copy
                                 </Button>
                             </div>
@@ -656,5 +665,7 @@ export function ManagePane() {
     </Card>
   );
 }
+
+    
 
     
