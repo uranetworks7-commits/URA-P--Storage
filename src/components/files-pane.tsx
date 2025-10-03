@@ -1,15 +1,17 @@
+
 "use client";
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { uploadFileAndSave } from "@/app/actions";
+import { uploadFileAndSave, uploadFileFromUrlAndSave } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { formatBytes } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FileUp, UploadCloud } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { FileUp, UploadCloud, Info, Link } from "lucide-react";
 import { Progress } from "./ui/progress";
 
 type FormState = {
@@ -22,15 +24,22 @@ const initialState: FormState = {
   message: "",
 };
 
+const ONE_MB = 1048576;
+
 export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
   const { userId } = useAuth();
   const [state, formAction] = useActionState(uploadFileAndSave, initialState);
+  const [urlState, urlFormAction] = useActionState(uploadFileFromUrlAndSave, initialState);
   const [isPending, startTransition] = useTransition();
+  const [isUrlPending, startUrlTransition] = useTransition();
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
+  const urlFormRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
+  const [fileTooLarge, setFileTooLarge] = useState(false);
+  const [isUrlDialogOpen, setUrlDialogOpen] = useState(false);
 
   useEffect(() => {
     if (state.message) {
@@ -39,6 +48,7 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
         formRef.current?.reset();
         setFileName(null);
         setFileSize(null);
+        setFileTooLarge(false);
       } else {
         toast({
           variant: "destructive",
@@ -49,20 +59,48 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
     }
   }, [state, toast]);
 
+   useEffect(() => {
+    if (urlState.message) {
+      if (urlState.success) {
+        toast({ title: "Success", description: urlState.message });
+        urlFormRef.current?.reset();
+        setUrlDialogOpen(false);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: urlState.message,
+        });
+      }
+    }
+  }, [urlState, toast]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setFileName(file.name);
       setFileSize(file.size);
+      if (file.size > ONE_MB) {
+        setFileTooLarge(true);
+      } else {
+        setFileTooLarge(false);
+      }
     } else {
       setFileName(null);
       setFileSize(null);
+      setFileTooLarge(false);
     }
   };
 
   const handleFormAction = (formData: FormData) => {
     startTransition(() => {
       formAction(formData);
+    });
+  };
+
+  const handleUrlFormAction = (formData: FormData) => {
+    startUrlTransition(() => {
+        urlFormAction(formData);
     });
   };
 
@@ -81,7 +119,43 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
         <form ref={formRef} action={handleFormAction} className="space-y-2">
           <input type="hidden" name="userId" value={userId || ""} />
           <div className="space-y-1">
-            <Label htmlFor="file-input" className="text-xs">Select file</Label>
+            <div className="flex items-center gap-2">
+                <Label htmlFor="file-input" className="text-xs">Select file</Label>
+                <Dialog open={isUrlDialogOpen} onOpenChange={setUrlDialogOpen}>
+                    <DialogTrigger asChild>
+                        <button type="button" className="text-primary hover:text-primary/80">
+                            <Info className="h-3 w-3" />
+                        </button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-sm">
+                        <DialogHeader>
+                            <DialogTitle className="text-base">Upload from URL</DialogTitle>
+                            <DialogDescription className="text-xs">Paste a direct link to a file to upload it.</DialogDescription>
+                        </DialogHeader>
+                        <form ref={urlFormRef} action={handleUrlFormAction} className="space-y-3">
+                             <input type="hidden" name="userId" value={userId || ""} />
+                            <div className="space-y-1">
+                                <Label htmlFor="url-input" className="text-xs">File URL</Label>
+                                <Input
+                                    id="url-input"
+                                    name="url"
+                                    type="url"
+                                    placeholder="https://example.com/file.jpg"
+                                    required
+                                    disabled={isUrlPending}
+                                    className="h-8 text-xs"
+                                />
+                            </div>
+                            <DialogFooter>
+                                <Button type="submit" size="sm" className="h-8 text-xs" disabled={isUrlPending}>
+                                    <Link className="mr-2 h-3 w-3" />
+                                    {isUrlPending ? "Uploading..." : "Upload from URL"}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+            </div>
             <Input
               id="file-input"
               name="file"
@@ -99,12 +173,16 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
               Selected: <span className="font-medium text-foreground">{fileName}</span> ({formatBytes(fileSize)})
             </div>
           )}
+
+          {fileTooLarge && (
+            <p className="text-xs text-destructive">We can't upload more than 1 Mb once, Please Upload through URL.</p>
+          )}
           
           {isPending && <Progress value={undefined} className="animate-pulse h-1.5" />}
 
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">{isOverQuota ? 'Storage full.' : 'Max 1GB total.'}</p>
-            <Button type="submit" size="sm" disabled={isPending || isOverQuota} className="h-8 text-xs">
+            <Button type="submit" size="sm" disabled={isPending || isOverQuota || fileTooLarge} className="h-8 text-xs">
               <FileUp className="mr-2 h-3 w-3" />
               {isPending ? "Uploading..." : "Upload & Save"}
             </Button>

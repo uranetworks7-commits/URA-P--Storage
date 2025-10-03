@@ -12,6 +12,7 @@ type FormState = {
 
 const URA_ERROR_503 = "URA-FS Error: 503. Service unavailable. Please check your connection or try again later.";
 
+const ONE_MB = 1048576;
 const ONE_GB = 1073741824;
 
 export async function loginOrCreateUser(
@@ -130,6 +131,10 @@ export async function uploadFileAndSave(
   if (file.size === 0) {
     return { success: false, message: "Cannot upload an empty file." };
   }
+  
+  if (file.size > ONE_MB) {
+    return { success: false, message: "File is too large. Max 1MB for direct upload." };
+  }
 
   try {
     // Check quota
@@ -164,6 +169,61 @@ export async function uploadFileAndSave(
   } catch (error) {
     console.error("Upload File Error:", error);
     return { success: false, message: URA_ERROR_503 };
+  }
+}
+
+export async function uploadFileFromUrlAndSave(
+  prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const fileUrl = formData.get("url") as string;
+  const userId = formData.get("userId") as string;
+
+  if (!fileUrl || !userId) {
+    return { success: false, message: "URL and User ID are required." };
+  }
+
+  try {
+    const fileResponse = await fetch(fileUrl);
+    if (!fileResponse.ok) {
+      return { success: false, message: "Failed to fetch the file from the provided URL." };
+    }
+    const blob = await fileResponse.blob();
+    const fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1) || "untitled";
+    const file = new File([blob], fileName, { type: blob.type });
+
+     // Check quota
+    const usageRef = ref(db, `users/${userId}/usageBytes`);
+    const usageSnapshot = await get(usageRef);
+    const currentUsage = usageSnapshot.val() || 0;
+    const isPremium = (await get(ref(db, `users/${userId}/premium`))).val() === true;
+    const quota = isPremium ? 2 * ONE_GB : ONE_GB;
+
+    if (currentUsage + file.size > quota) {
+      return { success: false, message: "Storage limit exceeded. Please upgrade to premium or delete files." };
+    }
+    
+    const url = await uploadToCatbox(file);
+    
+    const fileRecord = {
+      name: file.name,
+      size: file.size,
+      url,
+      timestamp: Date.now(),
+      type: file.type || 'application/octet-stream'
+    };
+
+    const filesRef = ref(db, `users/${userId}/files`);
+    const newFileRef = push(filesRef);
+    await set(newFileRef, fileRecord);
+
+    await set(usageRef, currentUsage + file.size);
+
+    revalidatePath("/");
+    return { success: true, message: `File from URL uploaded: ${file.name}` };
+  } catch (error) {
+    console.error("Upload from URL Error:", error);
+    return { success: false, message: "Could not process the file from the URL." };
   }
 }
 
