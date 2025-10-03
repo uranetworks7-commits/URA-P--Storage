@@ -44,31 +44,31 @@ export function DiaryPane() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="font-headline flex items-center gap-2">
+      <CardHeader className="p-4">
+        <CardTitle className="font-headline text-lg flex items-center gap-2">
           <BookMarked />
           New Diary Entry
         </CardTitle>
-        <CardDescription>
-          Your thoughts are safe here. Entries are saved with the current date and time.
+        <CardDescription className="text-xs">
+          Your thoughts are safe here.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form ref={formRef} action={formAction} className="space-y-4">
+      <CardContent className="p-4 pt-0">
+        <form ref={formRef} action={formAction} className="space-y-3">
           <input type="hidden" name="userId" value={userId || ""} />
-          <div className="space-y-2">
-            <Label htmlFor="diary-text">What's on your mind?</Label>
+          <div className="space-y-1">
+            <Label htmlFor="diary-text" className="text-xs">What's on your mind?</Label>
             <Textarea
               id="diary-text"
               name="text"
               placeholder="Today I..."
               required
-              rows={8}
+              rows={6}
             />
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Your entry will be encrypted and stored securely.</p>
-            <Button type="submit">
+            <p className="text-xs text-muted-foreground">Entries are encrypted.</p>
+            <Button type="submit" size="sm">
               <Save className="mr-2 h-4 w-4" />
               Save Entry
             </Button>

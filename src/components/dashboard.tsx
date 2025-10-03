@@ -24,22 +24,22 @@ export function Dashboard() {
   const isOverQuota = usage > quota;
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 md:p-8">
-      <header className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
+    <div className="max-w-4xl mx-auto p-2 sm:p-4">
+      <header className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
           <Logo />
           <div>
-            <h1 className="text-xl md:text-2xl font-bold font-headline">
-              Welcome to Your Private Storage
+            <h1 className="text-lg md:text-xl font-bold font-headline">
+              Welcome
             </h1>
-            <p className="text-muted-foreground text-sm">
-              Your ID: <span className="font-semibold font-code">{userId}</span>
-              {isPremium && <span className="ml-2 inline-flex items-center text-yellow-500"><Star className="h-4 w-4 mr-1" /> Premium</span>}
+            <p className="text-muted-foreground text-xs">
+              ID: <span className="font-semibold font-code">{userId}</span>
+              {isPremium && <span className="ml-2 inline-flex items-center text-yellow-500 text-xs"><Star className="h-3 w-3 mr-1" /> Premium</span>}
             </p>
           </div>
         </div>
         <Button variant="ghost" size="sm" onClick={logout}>
-          <LogOut className="mr-2 h-4 w-4" />
+          <LogOut className="mr-1 h-4 w-4" />
           Logout
         </Button>
       </header>
@@ -63,46 +63,46 @@ export function Dashboard() {
         </Tabs>
       </main>
 
-      <footer className="mt-8">
+      <footer className="mt-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="font-headline flex items-center justify-between">
+          <CardHeader className="p-4">
+            <CardTitle className="font-headline text-lg flex items-center justify-between">
               <span>Usage Information</span>
-              <Zap className="h-5 w-5 text-muted-foreground" />
+              <Zap className="h-4 w-4 text-muted-foreground" />
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs">
               {`Created: ${userData?.createdAt ? new Date(userData.createdAt).toLocaleString() : "-"}`}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-             <div className="space-y-2">
-              <div className="flex justify-between text-sm font-medium">
+          <CardContent className="p-4 pt-0">
+             <div className="space-y-1">
+              <div className="flex justify-between text-xs font-medium">
                 <span>{formatBytes(usage)} used</span>
                 <span className="text-muted-foreground">of {formatBytes(quota)}</span>
               </div>
-              <div className="w-full bg-secondary rounded-full h-2.5">
+              <div className="w-full bg-secondary rounded-full h-2">
                 <div
-                  className="bg-primary h-2.5 rounded-full transition-all duration-500"
+                  className="bg-primary h-2 rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(usagePercentage, 100)}%` }}
                 ></div>
               </div>
             </div>
             {isOverQuota && (
-              <Alert variant="destructive" className="mt-4">
+              <Alert variant="destructive" className="mt-3 p-3">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Storage Limit Exceeded</AlertTitle>
-                <AlertDescription>
-                  You need to upgrade to premium or delete some files to upload more.
+                <AlertTitle className="text-sm">Storage Limit Exceeded</AlertTitle>
+                <AlertDescription className="text-xs">
+                  Upgrade or delete files to upload more.
                 </AlertDescription>
               </Alert>
             )}
              {!isPremium && usage > 0.8 * ONE_GB && (
-              <Alert className="mt-4 border-primary/50 text-primary">
+              <Alert className="mt-3 p-3 border-primary/50 text-primary">
                 <Star className="h-4 w-4 text-primary" />
-                <AlertTitle>Upgrade to Premium</AlertTitle>
-                <AlertDescription className="flex items-center justify-between">
+                <AlertTitle className="text-sm">Upgrade to Premium</AlertTitle>
+                <AlertDescription className="flex items-center justify-between text-xs">
                   <span>
-                    You have exceeded 1GB. Get an additional 1GB for ₹100.
+                    Get an additional 1GB for ₹100.
                   </span>
                   <Button asChild size="sm">
                     <Link href="#">Upgrade Now</Link>

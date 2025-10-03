@@ -90,17 +90,17 @@ export function AuthPage() {
   }, [formState, login, toast, loginForm, createForm, activeTab]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4">
-      <header className="flex items-center gap-4 mb-6">
+    <div className="flex min-h-screen flex-col items-center justify-center p-2">
+      <header className="flex items-center gap-2 mb-4">
         <Logo />
         <div>
-          <h1 className="text-2xl font-bold font-headline">URA Private Storage</h1>
-          <p className="text-muted-foreground">
-            Secure personal diary, files, & more — protected by your 6-digit ID.
+          <h1 className="text-xl font-bold font-headline">URA Private Storage</h1>
+          <p className="text-sm text-muted-foreground">
+            Secure personal diary, files, & more.
           </p>
         </div>
       </header>
-      <Tabs defaultValue="login" className="w-full max-w-md" onValueChange={setActiveTab}>
+      <Tabs defaultValue="login" className="w-full max-w-sm" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">Login</TabsTrigger>
           <TabsTrigger value="register">Create Account</TabsTrigger>
@@ -109,11 +109,11 @@ export function AuthPage() {
           <Card>
             <form action={formAction}>
               <CardHeader>
-                <CardTitle className="font-headline">Login to Your Account</CardTitle>
+                <CardTitle className="font-headline text-xl">Login to Your Account</CardTitle>
                 <CardDescription>Enter your 6-digit ID to access your storage.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
+              <CardContent className="space-y-3">
+                <div className="space-y-1">
                   <Label htmlFor="login-userId">6-Digit ID</Label>
                   <Input
                     id="login-userId"
@@ -122,12 +122,12 @@ export function AuthPage() {
                     maxLength={6}
                     {...loginForm.register("userId")}
                   />
-                  {loginForm.formState.errors.userId && <p className="text-sm text-destructive">{loginForm.formState.errors.userId.message}</p>}
+                  {loginForm.formState.errors.userId && <p className="text-xs text-destructive">{loginForm.formState.errors.userId.message}</p>}
                 </div>
                  <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>Warning</AlertTitle>
-                    <AlertDescription>
+                    <AlertDescription className="text-xs">
                     Do not share your 6-digit ID. Keep it private — it's the only key to your data.
                     </AlertDescription>
                 </Alert>
@@ -145,11 +145,11 @@ export function AuthPage() {
           <Card>
             <form action={formAction}>
               <CardHeader>
-                <CardTitle className="font-headline">Create a New Account</CardTitle>
+                <CardTitle className="font-headline text-xl">Create a New Account</CardTitle>
                 <CardDescription>Choose a 6-digit ID to secure your new storage.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
+              <CardContent className="space-y-3">
+                <div className="space-y-1">
                   <Label htmlFor="create-userId">Choose Your 6-Digit ID</Label>
                   <Input
                     id="create-userId"
@@ -158,20 +158,20 @@ export function AuthPage() {
                     maxLength={6}
                     {...createForm.register("userId")}
                   />
-                  {createForm.formState.errors.userId && <p className="text-sm text-destructive">{createForm.formState.errors.userId.message}</p>}
+                  {createForm.formState.errors.userId && <p className="text-xs text-destructive">{createForm.formState.errors.userId.message}</p>}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
                     <Label htmlFor="username">Display Name (Optional)</Label>
                     <Input id="username" name="username" placeholder="Your Name" {...createForm.register("username")} />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                     <Label htmlFor="email">Email (Optional)</Label>
                     <Input id="email" name="email" type="email" placeholder="you@example.com" {...createForm.register("email")} />
-                    {createForm.formState.errors.email && <p className="text-sm text-destructive">{createForm.formState.errors.email.message}</p>}
+                    {createForm.formState.errors.email && <p className="text-xs text-destructive">{createForm.formState.errors.email.message}</p>}
                     </div>
                 </div>
-                <div className="flex items-start space-x-2">
+                <div className="flex items-start space-x-2 pt-1">
                   <Checkbox
                     id="terms"
                     {...createForm.register("terms")}
@@ -179,15 +179,15 @@ export function AuthPage() {
                   <div className="grid gap-1.5 leading-none">
                     <label
                       htmlFor="terms"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      I agree to the <Button variant="link" type="button" className="p-0 h-auto" onClick={() => setTermsOpen(true)}>Terms & Privacy</Button>
+                      I agree to the <Button variant="link" type="button" className="p-0 h-auto text-xs" onClick={() => setTermsOpen(true)}>Terms & Privacy</Button>
                     </label>
                   </div>
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" disabled={isPending} className="w-full">
+                <Button type="submit" className="w-full">
                     <UserPlus className="mr-2 h-4 w-4" />
                     {isPending ? "Creating..." : "Create Account"}
                 </Button>
@@ -197,7 +197,7 @@ export function AuthPage() {
         </TabsContent>
       </Tabs>
 
-      <footer className="mt-8 text-center text-sm text-muted-foreground">
+      <footer className="mt-6 text-center text-xs text-muted-foreground">
         <p>This is a client-side demo. For production, add server-side security.</p>
       </footer>
       <TermsDialog open={isTermsOpen} onOpenChange={setTermsOpen} />
