@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -101,7 +101,7 @@ export function AuthPage() {
         </TabsList>
         <TabsContent value="login">
           <Card>
-            <form action={loginForm.handleSubmit(data => formAction(data as FormData))}>
+            <form action={loginForm.handleSubmit(data => formAction(data as any))}>
               <CardHeader>
                 <CardTitle className="font-headline">Login to Your Account</CardTitle>
                 <CardDescription>Enter your 6-digit ID to access your storage.</CardDescription>
@@ -136,7 +136,7 @@ export function AuthPage() {
         </TabsContent>
         <TabsContent value="register">
           <Card>
-            <form action={createForm.handleSubmit(data => formAction(data as FormData))}>
+            <form action={createForm.handleSubmit(data => formAction(data as any))}>
               <CardHeader>
                 <CardTitle className="font-headline">Create a New Account</CardTitle>
                 <CardDescription>Choose a 6-digit ID to secure your new storage.</CardDescription>
@@ -185,4 +185,4 @@ export function AuthPage() {
 }
 
 // A helper type for combining form data
-type FormData = CreateFormData | LoginFormData;
+type FormData = CreateFormData & LoginFormData;
