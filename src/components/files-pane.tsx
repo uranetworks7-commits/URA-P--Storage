@@ -119,43 +119,7 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
         <form ref={formRef} action={handleFormAction} className="space-y-2">
           <input type="hidden" name="userId" value={userId || ""} />
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-                <Label htmlFor="file-input" className="text-xs">Select file</Label>
-                <Dialog open={isUrlDialogOpen} onOpenChange={setUrlDialogOpen}>
-                    <DialogTrigger asChild>
-                        <button type="button" className="text-primary hover:text-primary/80">
-                            <Info className="h-3 w-3" />
-                        </button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-sm">
-                        <DialogHeader>
-                            <DialogTitle className="text-base">Upload from URL</DialogTitle>
-                            <DialogDescription className="text-xs">Paste a direct link to a file to upload it.</DialogDescription>
-                        </DialogHeader>
-                        <form ref={urlFormRef} action={handleUrlFormAction} className="space-y-3">
-                             <input type="hidden" name="userId" value={userId || ""} />
-                            <div className="space-y-1">
-                                <Label htmlFor="url-input" className="text-xs">File URL</Label>
-                                <Input
-                                    id="url-input"
-                                    name="url"
-                                    type="url"
-                                    placeholder="https://example.com/file.jpg"
-                                    required
-                                    disabled={isUrlPending}
-                                    className="h-8 text-xs"
-                                />
-                            </div>
-                            <DialogFooter>
-                                <Button type="submit" size="sm" className="h-8 text-xs" disabled={isUrlPending}>
-                                    <Link className="mr-2 h-3 w-3" />
-                                    {isUrlPending ? "Uploading..." : "Upload from URL"}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-            </div>
+            <Label htmlFor="file-input" className="text-xs">Select file to upload directly</Label>
             <Input
               id="file-input"
               name="file"
@@ -188,6 +152,53 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
             </Button>
           </div>
         </form>
+        
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">
+              Or
+            </span>
+          </div>
+        </div>
+        
+        <Dialog open={isUrlDialogOpen} onOpenChange={setUrlDialogOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" className="w-full h-9 text-xs">
+                    <Link className="mr-2 h-4 w-4"/>
+                    Upload from URL
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-sm">
+                <DialogHeader>
+                    <DialogTitle className="text-base">Upload from URL</DialogTitle>
+                    <DialogDescription className="text-xs">Paste a direct link to a file to upload it to your storage.</DialogDescription>
+                </DialogHeader>
+                <form ref={urlFormRef} action={handleUrlFormAction} className="space-y-3">
+                     <input type="hidden" name="userId" value={userId || ""} />
+                    <div className="space-y-1">
+                        <Label htmlFor="url-input" className="text-xs">File URL</Label>
+                        <Input
+                            id="url-input"
+                            name="url"
+                            type="url"
+                            placeholder="https://example.com/file.jpg"
+                            required
+                            disabled={isUrlPending}
+                            className="h-8 text-xs"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button type="submit" size="sm" className="h-8 text-xs" disabled={isUrlPending}>
+                            <Link className="mr-2 h-3 w-3" />
+                            {isUrlPending ? "Uploading..." : "Upload from URL"}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
