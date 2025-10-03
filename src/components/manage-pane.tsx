@@ -23,7 +23,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Dialog,
@@ -60,14 +59,10 @@ export function ManagePane() {
   const handleUndo = async (item: ItemToDelete) => {
     if (!userId || item.type !== 'diary') return;
     
-    // This is a simplified undo that re-saves the diary entry.
-    // A more robust system might use a 'deleted' flag instead.
     const entryToRestore = item.data as DiaryEntry;
     const formData = new FormData();
     formData.set('userId', userId);
     formData.set('text', entryToRestore.text);
-    // We can't easily restore the exact timestamp as key, so we create a new one
-    // but preserve the original text and indicate it was restored.
     
     const result = await saveDiaryEntry({success: false, message: ''}, formData);
 
@@ -111,6 +106,14 @@ export function ManagePane() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }
+
+  const downloadFile = (file: StoredFile) => {
+    // For cross-origin files, we can only open them in a new tab.
+    // The browser will decide whether to display or download based on Content-Disposition.
+    // Catbox.moe doesn't set attachment, so it will open in a new tab.
+    // A true download would require a server-side proxy.
+    window.open(file.url, '_blank');
+  };
 
   const DeleteDialog = () => (
      <AlertDialog open={!!itemToDelete} onOpenChange={() => { setItemToDelete(null); setDeleteConfirmText(""); }}>
@@ -191,6 +194,9 @@ export function ManagePane() {
                                 <a href={file.url} target="_blank" rel="noopener noreferrer">
                                     <ExternalLink className="h-4 w-4"/>
                                 </a>
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => downloadFile(file)}>
+                                <Download className="h-4 w-4" />
                             </Button>
                             <Button variant="destructive" size="sm" onClick={() => setItemToDelete({ id, type: 'files', data: file })}><Trash2 className="h-4 w-4" /></Button>
                         </div>

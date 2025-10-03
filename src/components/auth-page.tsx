@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useActionState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -19,37 +19,48 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TermsDialog } from "./terms-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, LogIn } from "lucide-react";
+import { AlertTriangle, LogIn, UserPlus } from "lucide-react";
 
-const formSchema = z.object({
+// Schema for new user creation
+const createSchema = z.object({
   userId: z.string().length(6, "ID must be 6 digits.").regex(/^\d{6}$/, "ID must be numeric."),
   username: z.string().optional(),
   email: z.string().email("Invalid email address.").optional().or(z.literal('')),
 });
 
-type FormData = z.infer<typeof formSchema>;
+// Schema for existing user login
+const loginSchema = z.object({
+  userId: z.string().length(6, "ID must be 6 digits.").regex(/^\d{6}$/, "ID must be numeric."),
+});
+
+type CreateFormData = z.infer<typeof createSchema>;
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export function AuthPage() {
   const { login } = useAuth();
   const { toast } = useToast();
   const [isTermsOpen, setTermsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("login");
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      userId: "",
-      username: "",
-      email: "",
-    },
+  const loginForm = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { userId: "" },
   });
 
-  const [formState, formAction] = useActionState(async (_: any, data: FormData) => {
+  const createForm = useForm<CreateFormData>({
+    resolver: zodResolver(createSchema),
+    defaultValues: { userId: "", username: "", email: "" },
+  });
+
+  // Share action state between forms
+  const [formState, formAction, isPending] = React.useActionState(async (_: any, data: FormData) => {
     const result = await loginOrCreateUser(data.userId, data.username || '', data.email || '');
     return result;
   }, { success: false, message: "" });
-  
+
   useEffect(() => {
     if (formState.message) {
       if (formState.success) {
@@ -57,8 +68,11 @@ export function AuthPage() {
           title: "Success",
           description: formState.message,
         });
-        const userId = form.getValues("userId");
-        login(userId);
+        // Get the successful user ID from either form
+        const userId = activeTab === 'login' ? loginForm.getValues("userId") : createForm.getValues("userId");
+        if (userId) {
+          login(userId);
+        }
       } else {
         toast({
           variant: "destructive",
@@ -67,11 +81,7 @@ export function AuthPage() {
         });
       }
     }
-  }, [formState, login, toast, form]);
-
-  const onSubmit = (data: FormData) => {
-    formAction(data);
-  };
+  }, [formState, login, toast, loginForm, createForm, activeTab]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
@@ -84,58 +94,95 @@ export function AuthPage() {
           </p>
         </div>
       </header>
-      <Card className="w-full max-w-md">
-        <form action={form.handleSubmit(onSubmit)}>
-          <CardHeader>
-            <CardTitle className="font-headline">Login or Create Account</CardTitle>
-            <CardDescription>Enter a 6-digit ID to create an account or log in.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="userId">6-Digit ID</Label>
-              <Input
-                id="userId"
-                placeholder="e.g. 123456"
-                maxLength={6}
-                {...form.register("userId")}
-              />
-              {form.formState.errors.userId && <p className="text-sm text-destructive">{form.formState.errors.userId.message}</p>}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Tabs defaultValue="login" className="w-full max-w-md" onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="login">Login</TabsTrigger>
+          <TabsTrigger value="register">Create Account</TabsTrigger>
+        </TabsList>
+        <TabsContent value="login">
+          <Card>
+            <form action={loginForm.handleSubmit(data => formAction(data as FormData))}>
+              <CardHeader>
+                <CardTitle className="font-headline">Login to Your Account</CardTitle>
+                <CardDescription>Enter your 6-digit ID to access your storage.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                <Label htmlFor="username">Display Name (Optional)</Label>
-                <Input id="username" placeholder="Your Name" {...form.register("username")} />
+                  <Label htmlFor="login-userId">6-Digit ID</Label>
+                  <Input
+                    id="login-userId"
+                    placeholder="e.g. 123456"
+                    maxLength={6}
+                    {...loginForm.register("userId")}
+                  />
+                  {loginForm.formState.errors.userId && <p className="text-sm text-destructive">{loginForm.formState.errors.userId.message}</p>}
                 </div>
+                 <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Warning</AlertTitle>
+                    <AlertDescription>
+                    Keep your ID private — it's the only key to your data.
+                    </AlertDescription>
+                </Alert>
+              </CardContent>
+              <CardFooter>
+                 <Button type="submit" disabled={isPending} className="w-full">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    {isPending ? "Processing..." : "Login"}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        </TabsContent>
+        <TabsContent value="register">
+          <Card>
+            <form action={createForm.handleSubmit(data => formAction(data as FormData))}>
+              <CardHeader>
+                <CardTitle className="font-headline">Create a New Account</CardTitle>
+                <CardDescription>Choose a 6-digit ID to secure your new storage.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                <Label htmlFor="email">Email (Optional)</Label>
-                <Input id="email" type="email" placeholder="you@example.com" {...form.register("email")} />
-                 {form.formState.errors.email && <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>}
+                  <Label htmlFor="create-userId">Choose Your 6-Digit ID</Label>
+                  <Input
+                    id="create-userId"
+                    placeholder="e.g. 654321"
+                    maxLength={6}
+                    {...createForm.register("userId")}
+                  />
+                  {createForm.formState.errors.userId && <p className="text-sm text-destructive">{createForm.formState.errors.userId.message}</p>}
                 </div>
-            </div>
-            <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Warning</AlertTitle>
-                <AlertDescription>
-                Do not share your 6-digit ID. Keep it private — it's the only key to your data.
-                </AlertDescription>
-            </Alert>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button type="button" variant="ghost" onClick={() => setTermsOpen(true)}>
-              Terms & Privacy
-            </Button>
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              <LogIn className="mr-2 h-4 w-4" />
-              {form.formState.isSubmitting ? "Processing..." : "Login / Create"}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                    <Label htmlFor="username">Display Name (Optional)</Label>
+                    <Input id="username" placeholder="Your Name" {...createForm.register("username")} />
+                    </div>
+                    <div className="space-y-2">
+                    <Label htmlFor="email">Email (Optional)</Label>
+                    <Input id="email" type="email" placeholder="you@example.com" {...createForm.register("email")} />
+                    {createForm.formState.errors.email && <p className="text-sm text-destructive">{createForm.formState.errors.email.message}</p>}
+                    </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" disabled={isPending} className="w-full">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    {isPending ? "Creating..." : "Create Account"}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
       <footer className="mt-8 text-center text-sm text-muted-foreground">
-        <p>This is a client-side demo wired to a Firebase DB.</p>
-        <p>For production, add server-side security and auth rules.</p>
+        <p>By using this service, you agree to our <Button variant="link" className="p-0 h-auto" onClick={() => setTermsOpen(true)}>Terms & Privacy</Button>.</p>
+        <p>This is a client-side demo. For production, add server-side security.</p>
       </footer>
       <TermsDialog open={isTermsOpen} onOpenChange={setTermsOpen} />
     </div>
   );
 }
+
+// A helper type for combining form data
+type FormData = CreateFormData | LoginFormData;
