@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 type FormState = {
   success: boolean;
   message: string;
+  unlockCode?: string;
 };
 
 const URA_ERROR_503 = "URA-FS Error: 503. Service unavailable. Please check your connection or try again later.";
@@ -34,8 +35,14 @@ export async function loginOrCreateUser(
         username: username || null,
         email: email || null,
         usageBytes: 0,
+        locked: false,
+        unlockCode: null,
       });
     } else {
+       const userData = snapshot.val();
+      if (userData.locked) {
+        return { success: false, message: "Account is locked." };
+      }
       const updates: { username?: string; email?: string } = {};
       if (username) updates.username = username;
       if (email) updates.email = email;
@@ -50,6 +57,71 @@ export async function loginOrCreateUser(
     return { success: false, message: URA_ERROR_503 };
   }
 }
+
+export async function lockAccount(prevState: FormState, formData: FormData): Promise<FormState> {
+  const userId = formData.get("userId") as string;
+  if (!userId || !/^\d{6}$/.test(userId)) {
+    return { success: false, message: "Invalid User ID provided." };
+  }
+
+  try {
+    const userRef = ref(db, `users/${userId}`);
+    const snapshot = await get(userRef);
+    if (!snapshot.exists()) {
+      return { success: false, message: "User not found." };
+    }
+
+    const unlockCode = Math.floor(1000 + Math.random() * 9000).toString();
+
+    await update(userRef, {
+      locked: true,
+      unlockCode: unlockCode,
+    });
+
+    revalidatePath("/");
+    revalidatePath("/safety");
+    return { success: true, message: "Account locked successfully.", unlockCode };
+
+  } catch(error) {
+    console.error("Lock Account Error:", error);
+    return { success: false, message: URA_ERROR_503 };
+  }
+}
+
+export async function unlockAccount(prevState: FormState, formData: FormData): Promise<FormState> {
+    const userId = formData.get("userId") as string;
+    const code = formData.get("unlockCode") as string;
+
+    if (!userId || !code) {
+        return { success: false, message: "User ID and unlock code are required." };
+    }
+
+    try {
+        const userRef = ref(db, `users/${userId}`);
+        const snapshot = await get(userRef);
+        const userData = snapshot.val();
+
+        if (!userData) {
+            return { success: false, message: "User not found." };
+        }
+
+        if (userData.unlockCode !== code) {
+            return { success: false, message: "Invalid unlock code." };
+        }
+
+        await update(userRef, {
+            locked: false,
+            unlockCode: null,
+        });
+        revalidatePath("/");
+        return { success: true, message: "Account unlocked successfully!" };
+
+    } catch(error) {
+        console.error("Unlock Account Error:", error);
+        return { success: false, message: URA_ERROR_503 };
+    }
+}
+
 
 export async function saveDiaryEntry(
   prevState: FormState,
@@ -138,10 +210,14 @@ export async function uploadFileAndSave(
 
   try {
     // Check quota
-    const usageRef = ref(db, `users/${userId}/usageBytes`);
-    const usageSnapshot = await get(usageRef);
-    const currentUsage = usageSnapshot.val() || 0;
-    const isPremium = (await get(ref(db, `users/${userId}/premium`))).val() === true;
+    const userRef = ref(db, `users/${userId}`);
+    const userSnapshot = await get(userRef);
+    if (!userSnapshot.exists() || userSnapshot.val().locked) {
+        return { success: false, message: "Account is locked or does not exist." };
+    }
+    const userData = userSnapshot.val();
+    const currentUsage = userData.usageBytes || 0;
+    const isPremium = userData.premium === true;
     const quota = isPremium ? 2 * ONE_GB : ONE_GB;
 
     if (currentUsage + file.size > quota) {
@@ -162,7 +238,7 @@ export async function uploadFileAndSave(
     const newFileRef = push(filesRef);
     await set(newFileRef, fileRecord);
     
-    await set(usageRef, currentUsage + file.size);
+    await update(userRef, { usageBytes: currentUsage + file.size });
     
     revalidatePath("/");
     return { success: true, message: "File uploaded successfully." };
@@ -187,6 +263,13 @@ export async function uploadFileFromUrlAndSave(
   }
 
   try {
+    const userRef = ref(db, `users/${userId}`);
+    const userSnapshot = await get(userRef);
+    if (!userSnapshot.exists() || userSnapshot.val().locked) {
+        return { success: false, message: "Account is locked or does not exist." };
+    }
+    const userData = userSnapshot.val();
+
     const fileResponse = await fetch(fileUrl);
     if (!fileResponse.ok) {
       return { success: false, message: "Failed to fetch the file from the provided URL." };
@@ -198,10 +281,8 @@ export async function uploadFileFromUrlAndSave(
     const file = new File([blob], fileName, { type: fileType });
 
      // Check quota
-    const usageRef = ref(db, `users/${userId}/usageBytes`);
-    const usageSnapshot = await get(usageRef);
-    const currentUsage = usageSnapshot.val() || 0;
-    const isPremium = (await get(ref(db, `users/${userId}/premium`))).val() === true;
+    const currentUsage = userData.usageBytes || 0;
+    const isPremium = userData.premium === true;
     const quota = isPremium ? 2 * ONE_GB : ONE_GB;
 
     if (currentUsage + file.size > quota) {
@@ -222,7 +303,7 @@ export async function uploadFileFromUrlAndSave(
     const newFileRef = push(filesRef);
     await set(newFileRef, fileRecord);
 
-    await set(usageRef, currentUsage + file.size);
+    await update(userRef, { usageBytes: currentUsage + file.size });
 
     revalidatePath("/");
     return { success: true, message: `File from URL uploaded: ${file.name}` };
@@ -238,6 +319,12 @@ export async function deleteItem(userId: string, itemType: 'diary' | 'files', it
   }
 
   try {
+    const userRef = ref(db, `users/${userId}`);
+    const userSnapshot = await get(userRef);
+    if (!userSnapshot.exists() || userSnapshot.val().locked) {
+        return { success: false, message: "Account is locked or does not exist." };
+    }
+    
     const itemRef = ref(db, `users/${userId}/${itemType}/${itemId}`);
     
     if (itemType === 'files') {
@@ -246,11 +333,9 @@ export async function deleteItem(userId: string, itemType: 'diary' | 'files', it
         const fileData = fileSnapshot.val();
         const fileSize = fileData.size || 0;
         
-        const usageRef = ref(db, `users/${userId}/usageBytes`);
-        const usageSnapshot = await get(usageRef);
-        const currentUsage = usageSnapshot.val() || 0;
+        const currentUsage = userSnapshot.val().usageBytes || 0;
         
-        await set(usageRef, Math.max(0, currentUsage - fileSize));
+        await update(userRef, { usageBytes: Math.max(0, currentUsage - fileSize) });
       }
     }
 

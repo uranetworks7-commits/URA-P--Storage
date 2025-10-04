@@ -19,4 +19,6 @@ export interface UserData {
   diary?: Record<string, DiaryEntry>;
   files?: Record<string, StoredFile>;
   premium?: boolean;
+  locked?: boolean;
+  unlockCode?: string;
 }

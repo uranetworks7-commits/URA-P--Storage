@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/hooks/use-auth";
-import { loginOrCreateUser } from "@/app/actions";
+import { loginOrCreateUser, unlockAccount } from "@/app/actions";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,8 +22,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TermsDialog } from "./terms-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, LogIn, UserPlus } from "lucide-react";
+import { AlertTriangle, LogIn, UserPlus, ShieldAlert } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Schema for new user creation
 const createSchema = z.object({
@@ -38,14 +39,22 @@ const loginSchema = z.object({
   userId: z.string().length(6, "ID must be 6 digits.").regex(/^\d{6}$/, "ID must be numeric."),
 });
 
+const unlockSchema = z.object({
+  unlockCode: z.string().length(4, "Code must be 4 digits.").regex(/^\d{4}$/, "Code must be numeric."),
+});
+
+
 type CreateFormData = z.infer<typeof createSchema>;
 type LoginFormData = z.infer<typeof loginSchema>;
+type UnlockFormData = z.infer<typeof unlockSchema>;
 
 export function AuthPage() {
   const { login } = useAuth();
   const { toast } = useToast();
   const [isTermsOpen, setTermsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
+  const [isUnlockModalOpen, setUnlockModalOpen] = useState(false);
+  const [userIdToUnlock, setUserIdToUnlock] = useState("");
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -57,6 +66,11 @@ export function AuthPage() {
     defaultValues: { userId: "", username: "", email: "", terms: false },
   });
 
+  const unlockForm = useForm<UnlockFormData>({
+    resolver: zodResolver(unlockSchema),
+    defaultValues: { unlockCode: "" },
+  });
+
   // Share action state between forms
   const [formState, formAction, isPending] = React.useActionState(async (_: any, data: FormData) => {
     const userId = data.get('userId') as string;
@@ -65,6 +79,8 @@ export function AuthPage() {
     const result = await loginOrCreateUser(userId, username || '', email || '');
     return result;
   }, { success: false, message: "" });
+  
+  const [unlockState, unlockAction, isUnlockPending] = React.useActionState(unlockAccount, { success: false, message: "" });
 
 
   useEffect(() => {
@@ -80,14 +96,33 @@ export function AuthPage() {
           login(userId);
         }
       } else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: formState.message,
-        });
+        if (formState.message === "Account is locked.") {
+            const userId = activeTab === 'login' ? loginForm.getValues("userId") : createForm.getValues("userId");
+            setUserIdToUnlock(userId);
+            setUnlockModalOpen(true);
+        } else {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: formState.message,
+            });
+        }
       }
     }
   }, [formState, login, toast, loginForm, createForm, activeTab]);
+
+  useEffect(() => {
+    if(unlockState.message) {
+        if(unlockState.success) {
+            toast({ title: "Success", description: unlockState.message });
+            setUnlockModalOpen(false);
+            login(userIdToUnlock);
+        } else {
+            toast({ variant: "destructive", title: "Error", description: unlockState.message });
+        }
+    }
+  }, [unlockState, login, toast, userIdToUnlock]);
+
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-1">
@@ -189,7 +224,7 @@ export function AuthPage() {
                 </div>
               </CardContent>
               <CardFooter className="p-4">
-                <Button type="submit" className="w-full h-9">
+                <Button type="submit" className="w-full h-9" disabled={isPending}>
                     <UserPlus className="mr-2 h-4 w-4" />
                     {isPending ? "Creating..." : "Create Account"}
                 </Button>
@@ -208,6 +243,39 @@ export function AuthPage() {
         </p>
       </footer>
       <TermsDialog open={isTermsOpen} onOpenChange={setTermsOpen} />
+
+      <Dialog open={isUnlockModalOpen} onOpenChange={setUnlockModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><ShieldAlert className="h-5 w-5 text-destructive" /> Account Locked</DialogTitle>
+            <DialogDescription>
+              This account is locked by the owner. Please enter the 4-digit one-time unlock code to regain access.
+            </DialogDescription>
+          </DialogHeader>
+          <form action={unlockAction}>
+            <input type="hidden" name="userId" value={userIdToUnlock} />
+            <div className="space-y-2 py-4">
+                <Label htmlFor="unlock-code" className="text-xs">4-Digit Unlock Code</Label>
+                <Input
+                    id="unlock-code"
+                    name="unlockCode"
+                    maxLength={4}
+                    {...unlockForm.register("unlockCode")}
+                    className="h-10 text-center text-lg tracking-[0.5em]"
+                    placeholder="****"
+                />
+                {unlockForm.formState.errors.unlockCode && <p className="text-xs text-destructive">{unlockForm.formState.errors.unlockCode.message}</p>}
+            </div>
+            <DialogFooter>
+                <Button type="button" variant="ghost" onClick={() => setUnlockModalOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={isUnlockPending}>
+                    {isUnlockPending ? "Unlocking..." : "Unlock Account"}
+                </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

@@ -10,8 +10,9 @@ import { Logo } from "@/components/logo";
 import { DiaryPane } from "@/components/diary-pane";
 import { FilesPane } from "@/components/files-pane";
 import { ManagePane } from "@/components/manage-pane";
-import { LogOut, AlertTriangle, Zap, Star } from "lucide-react";
+import { LogOut, AlertTriangle, Zap, Star, CloudAlert } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
 
 const ONE_GB = 1073741824;
 
@@ -22,6 +23,12 @@ export function Dashboard() {
   const quota = isPremium ? 2 * ONE_GB : ONE_GB;
   const usagePercentage = (usage / quota) * 100;
   const isOverQuota = usage > quota;
+
+  useEffect(() => {
+    if (userData?.locked) {
+        logout();
+    }
+  }, [userData?.locked, logout]);
 
   return (
     <div className="max-w-lg mx-auto p-1 sm:p-2">
@@ -38,10 +45,17 @@ export function Dashboard() {
             </p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={logout} className="h-8">
-          <LogOut className="mr-1 h-3 w-3" />
-          Logout
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-blue-500">
+            <Link href="/safety">
+                <CloudAlert className="h-5 w-5"/>
+            </Link>
+          </Button>
+          <Button variant="ghost" size="sm" onClick={logout} className="h-8">
+            <LogOut className="mr-1 h-3 w-3" />
+            Logout
+          </Button>
+        </div>
       </header>
 
       <main>
