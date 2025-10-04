@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -98,6 +97,9 @@ export function ManagePane() {
   const [viewingFileUrl, setViewingFileUrl] = useState<StoredFile | null>(null);
   const fileUrlTextareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const [sharedFileUrl, setSharedFileUrl] = useState<string | null>(null);
+  const sharedFileUrlTextareaRef = useRef<HTMLTextAreaElement>(null);
+
 
   const [editState, editFormAction, isEditPending] = useActionState(updateDiaryEntry, initialFormState);
 
@@ -123,6 +125,12 @@ export function ManagePane() {
         fileUrlTextareaRef.current.select();
     }
   }, [viewingFileUrl]);
+
+  useEffect(() => {
+    if (sharedFileUrl && sharedFileUrlTextareaRef.current) {
+      sharedFileUrlTextareaRef.current.select();
+    }
+  }, [sharedFileUrl]);
 
 
   const diaryEntries = useMemo(() => userData?.diary ? Object.entries(userData.diary).sort((a, b) => b[1].timestamp - a[1].timestamp) : [], [userData?.diary]);
@@ -301,6 +309,18 @@ export function ManagePane() {
     toast({ title: "Import Complete", description: `Imported ${diarySuccess} diary entries and ${filesSuccess} files.` });
   };
   
+  const handleShowSharedFileUrl = () => {
+    const firstSelectedFileId = Object.keys(selectedFiles).find(id => selectedFiles[id]);
+    if (!firstSelectedFileId) {
+      toast({ variant: "destructive", title: "No File Selected", description: "Please select a file to see its URL." });
+      return;
+    }
+    const fileEntry = files.find(([id]) => id === firstSelectedFileId);
+    if (fileEntry) {
+      setSharedFileUrl(fileEntry[1].url);
+    }
+  };
+
   const DeleteDialog = () => (
      <AlertDialog open={!!itemToDelete} onOpenChange={() => { setItemToDelete(null); setDeleteConfirmText(""); }}>
       <AlertDialogContent>
@@ -524,9 +544,14 @@ export function ManagePane() {
                             <Textarea ref={shareCodeTextareaRef} readOnly value={shareCode} rows={5} className="font-mono text-xs" />
                             <div className="flex items-center justify-between">
                                 <p className="text-xs text-muted-foreground">This code is now selected. Press and hold to copy.</p>
-                                <Button size="sm" className="h-8 text-xs" onClick={() => { navigator.clipboard.writeText(shareCode); toast({ title: "Copied!", description: "Share code copied to clipboard." })}}>
-                                    <Copy className="mr-2 h-3 w-3"/> Copy
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleShowSharedFileUrl}>
+                                        <LinkIcon className="h-4 w-4"/>
+                                    </Button>
+                                    <Button size="sm" className="h-8 text-xs" onClick={() => { navigator.clipboard.writeText(shareCode); toast({ title: "Copied!", description: "Share code copied to clipboard." })}}>
+                                        <Copy className="mr-2 h-3 w-3"/> Copy
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -694,13 +719,31 @@ export function ManagePane() {
             </DialogContent>
           </Dialog>
         )}
+        {sharedFileUrl && (
+          <Dialog open={!!sharedFileUrl} onOpenChange={() => setSharedFileUrl(null)}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="text-base">Shared File URL</DialogTitle>
+                    <DialogDescription className="text-xs">
+                        This is the direct URL to the shared file.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                    <Textarea ref={sharedFileUrlTextareaRef} readOnly value={sharedFileUrl} rows={4} className="font-mono text-xs" />
+                    <p className="text-xs text-muted-foreground">The URL is now selected. Press and hold to copy.</p>
+                </div>
+                 <DialogFooter>
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setSharedFileUrl(null)}>Close</Button>
+                     <Button size="sm" className="h-8 text-xs" onClick={() => { navigator.clipboard.writeText(sharedFileUrl); toast({ title: "Copied!", description: "File URL copied to clipboard." })}}>
+                        <Copy className="mr-2 h-3 w-3"/> Copy
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </CardContent>
     </Card>
   );
 }
-
-    
-
-    
 
     
