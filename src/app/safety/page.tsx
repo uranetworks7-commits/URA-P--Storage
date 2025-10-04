@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useTransition } from "react";
@@ -82,10 +83,7 @@ export default function SafetyPage() {
             return;
         }
         startTransition(() => {
-            setViewState('locking');
-            setTimeout(() => {
-                lockAction(formData);
-            }, 2000); // Wait for animation to play
+            lockAction(formData);
         });
     };
 
@@ -96,24 +94,36 @@ export default function SafetyPage() {
     }, [viewState]);
 
     useEffect(() => {
-        if (lockState.success) {
-            setViewState('locked');
-            setTimeout(() => {
-              if (codeRef.current) {
-                const range = document.createRange();
-                range.selectNodeContents(codeRef.current);
-                const selection = window.getSelection();
-                selection?.removeAllRanges();
-                selection?.addRange(range);
-              }
-            }, 100);
-        } else if (lockState.message) {
-            toast({
-                variant: "destructive",
-                title: "Lock Failed",
-                description: lockState.message
-            });
-            setViewState('lock_account');
+        if (isPending) {
+            setViewState('locking');
+        }
+    }, [isPending]);
+
+    useEffect(() => {
+        if (lockState.message) { // This will run after the action is complete
+            if (lockState.success) {
+                // The animation has been playing via the isPending effect.
+                // Now we transition to the final locked state.
+                 setTimeout(() => {
+                    setViewState('locked');
+                    setTimeout(() => {
+                      if (codeRef.current) {
+                        const range = document.createRange();
+                        range.selectNodeContents(codeRef.current);
+                        const selection = window.getSelection();
+                        selection?.removeAllRanges();
+                        selection?.addRange(range);
+                      }
+                    }, 100);
+                }, 2000); // Allow animation to finish
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Lock Failed",
+                    description: lockState.message
+                });
+                setViewState('lock_account');
+            }
         }
     }, [lockState, toast]);
 
