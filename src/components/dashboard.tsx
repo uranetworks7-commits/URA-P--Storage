@@ -46,7 +46,7 @@ export function Dashboard() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-blue-500">
+          <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-red-500">
             <Link href="/safety">
                 <CloudAlert className="h-5 w-5"/>
             </Link>

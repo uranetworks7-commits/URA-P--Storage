@@ -129,11 +129,11 @@ export default function SafetyPage() {
                                 <p className="text-xs text-muted-foreground">Get help if you're having trouble.</p>
                             </div>
                         </Button>
-                         <Button variant="destructive" className="h-auto justify-start text-left p-3 bg-destructive/10 border border-destructive/20 text-destructive-foreground hover:bg-destructive/20" onClick={() => setViewState('lock_account')}>
-                            <ShieldOff className="h-5 w-5 mr-3 text-destructive"/>
+                         <Button variant="outline" className="h-auto justify-start text-left p-3 border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/10" onClick={() => setViewState('lock_account')}>
+                            <ShieldOff className="h-5 w-5 mr-3 text-orange-500"/>
                              <div>
-                                <p className="font-semibold text-sm">My Account is Hacked, Lock it</p>
-                                <p className="text-xs text-destructive/80">Immediately lock your account.</p>
+                                <p className="font-semibold text-sm text-orange-600">My Account is Hacked, Lock it</p>
+                                <p className="text-xs text-orange-600/80">Immediately lock your account.</p>
                             </div>
                         </Button>
                     </CardContent>
