@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ShieldQuestion, Copy, ArrowLeft, ShieldOff, ShieldCheck, Shield, Lock, KeyRound } from "lucide-react";
+import { ShieldQuestion, Copy, ArrowLeft, ShieldOff, ShieldCheck, Shield, Lock, KeyRound, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 
