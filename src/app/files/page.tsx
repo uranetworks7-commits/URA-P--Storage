@@ -41,7 +41,39 @@ export default function FilesPage() {
   }, [files, searchTerm]);
 
   const downloadFile = (file: StoredFile) => {
-    window.open(file.url, '_blank');
+    try {
+      toast({ title: "Starting download...", description: file.name });
+      // This is a workaround for cross-origin downloads.
+      // It fetches the file and creates a temporary link to trigger the download.
+      fetch(file.url)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok.');
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = file.name;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          a.remove();
+        })
+        .catch(err => {
+          console.error("Download failed:", err);
+          toast({ variant: "destructive", title: "Download failed", description: "Could not download the file. Please try again." });
+          // Fallback for browsers that block this, or for CORS issues.
+          window.open(file.url, '_blank');
+        });
+    } catch (error) {
+      console.error("Download initialization failed:", error);
+      toast({ variant: "destructive", title: "Download failed", description: "An unexpected error occurred." });
+      window.open(file.url, '_blank');
+    }
   };
 
   const getFileIcon = (file: StoredFile) => {
