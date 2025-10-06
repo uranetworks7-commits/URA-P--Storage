@@ -5,7 +5,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import type { DiaryEntry, StoredFile } from "@/lib/types";
-import { formatBytes, isImageFile, isVideoFile, isAudioFile } from "@/lib/utils";
+import { formatBytes, isImageFile, isVideoFile, isAudioFile, isPdfFile, isZipFile } from "@/lib/utils";
 import { deleteItem, saveDiaryEntry, updateDiaryEntry, uploadFileFromUrlAndSave } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useRef, useActionState, useEffect, useMemo } from "react";
@@ -43,7 +43,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox, Eye, Film, Music, FileQuestion, Link as LinkIcon } from "lucide-react";
+import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox, Eye, Film, Music, FileQuestion, Link as LinkIcon, FileText } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -211,6 +211,10 @@ export function ManagePane() {
   }
 
   const downloadFile = (file: StoredFile) => {
+    if (isPdfFile(file.name) || isZipFile(file.name)) {
+        window.open(file.url, '_blank');
+        return;
+    }
     try {
       toast({ title: "Starting download...", description: file.name });
       fetch(file.url)
@@ -240,6 +244,14 @@ export function ManagePane() {
       console.error("Download initialization failed:", error);
       toast({ variant: "destructive", title: "Download failed", description: "An unexpected error occurred." });
       window.open(file.url, '_blank');
+    }
+  };
+
+  const handleViewFileClick = (file: StoredFile) => {
+    if (isPdfFile(file.name) || isZipFile(file.name)) {
+      window.open(file.url, '_blank');
+    } else {
+      setViewingFile(file);
     }
   };
   
@@ -384,13 +396,16 @@ export function ManagePane() {
     if (isImageFile(file.name)) {
       return null;
     }
+    if (isPdfFile(file.name)) {
+      return <FileText className="h-6 w-6 text-muted-foreground" />;
+    }
     if (isVideoFile(file.name)) {
       return <Film className="h-6 w-6 text-muted-foreground" />;
     }
     if (isAudioFile(file.name)) {
       return <Music className="h-6 w-6 text-muted-foreground" />;
     }
-    if (file.type === 'application/octet-stream') {
+    if (file.type === 'application/octet-stream' || isZipFile(file.name)) {
         return <FileQuestion className="h-6 w-6 text-muted-foreground" />;
     }
     return <FileIcon className="h-6 w-6 text-muted-foreground" />;
@@ -461,7 +476,7 @@ export function ManagePane() {
                             <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setViewingFileUrl(file)}>
                                 <LinkIcon className="h-3 w-3"/>
                             </Button>
-                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setViewingFile(file)}>
+                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleViewFileClick(file)}>
                                 <Eye className="h-3 w-3"/>
                             </Button>
                             <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => downloadFile(file)}>
@@ -685,7 +700,7 @@ export function ManagePane() {
                      )}
                       {!isImageFile(viewingFile.name) && !isVideoFile(viewingFile.name) && !isAudioFile(viewingFile.name) && (
                         <div className="flex flex-col items-center justify-center gap-4 p-8 bg-secondary/30 rounded-lg">
-                            {viewingFile.type === 'application/octet-stream' ? <FileQuestion className="h-16 w-16 text-muted-foreground" /> : <FileIcon className="h-16 w-16 text-muted-foreground" />}
+                            {isPdfFile(viewingFile.name) ? <FileText className="h-16 w-16 text-muted-foreground" /> : (viewingFile.type === 'application/octet-stream' || isZipFile(viewingFile.name) ? <FileQuestion className="h-16 w-16 text-muted-foreground" /> : <FileIcon className="h-16 w-16 text-muted-foreground" />)}
                             <div className="text-center text-sm">
                                 <p className="font-semibold">{viewingFile.name}</p>
                                 <p className="text-muted-foreground">{formatBytes(viewingFile.size)}</p>
@@ -783,5 +798,3 @@ export function ManagePane() {
     </Card>
   );
 }
-
-    

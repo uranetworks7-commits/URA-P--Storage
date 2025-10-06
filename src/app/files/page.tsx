@@ -3,13 +3,13 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { StoredFile } from "@/lib/types";
-import { formatBytes, isImageFile, isVideoFile, isAudioFile } from "@/lib/utils";
+import { formatBytes, isImageFile, isVideoFile, isAudioFile, isPdfFile, isZipFile } from "@/lib/utils";
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, Search, File as FileIcon, Download, Film, Music, FileQuestion, Eye } from "lucide-react";
+import { ArrowLeft, Search, File as FileIcon, Download, Film, Music, FileQuestion, Eye, FileText } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
@@ -40,7 +40,20 @@ export default function FilesPage() {
     );
   }, [files, searchTerm]);
 
+  const handleViewClick = (file: StoredFile) => {
+    if (isPdfFile(file.name) || isZipFile(file.name)) {
+        window.open(file.url, '_blank');
+    } else {
+        setViewingFile(file);
+    }
+  };
+
   const downloadFile = (file: StoredFile) => {
+    if (isPdfFile(file.name) || isZipFile(file.name)) {
+        window.open(file.url, '_blank');
+        return;
+    }
+
     try {
       toast({ title: "Starting download...", description: file.name });
       // This is a workaround for cross-origin downloads.
@@ -82,13 +95,16 @@ export default function FilesPage() {
         <Image src={file.url} alt={file.name} layout="fill" className="object-cover rounded-t-lg" />
       );
     }
+    if (isPdfFile(file.name)) {
+      return <FileText className="h-16 w-16 text-muted-foreground" />;
+    }
     if (isVideoFile(file.name)) {
       return <Film className="h-16 w-16 text-muted-foreground" />;
     }
     if (isAudioFile(file.name)) {
       return <Music className="h-16 w-16 text-muted-foreground" />;
     }
-    if (file.type === 'application/octet-stream') {
+    if (file.type === 'application/octet-stream' || isZipFile(file.name)) {
         return <FileQuestion className="h-16 w-16 text-muted-foreground" />;
     }
     return <FileIcon className="h-16 w-16 text-muted-foreground" />;
@@ -129,7 +145,7 @@ export default function FilesPage() {
                     <p className="text-xs text-muted-foreground">{formatBytes(file.size)}</p>
                 </CardFooter>
                  <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => setViewingFile(file)}>
+                   <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => handleViewClick(file)}>
                       <Eye className="h-4 w-4" />
                    </Button>
                    <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => downloadFile(file)}>

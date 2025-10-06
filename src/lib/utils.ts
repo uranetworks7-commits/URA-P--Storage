@@ -38,3 +38,13 @@ export function isAudioFile(fileName: string): boolean {
     const lowercasedName = fileName.toLowerCase();
     return audioExtensions.some(ext => lowercasedName.endsWith(ext));
 }
+
+export function isPdfFile(fileName: string): boolean {
+    if (!fileName) return false;
+    return fileName.toLowerCase().endsWith('.pdf');
+}
+
+export function isZipFile(fileName: string): boolean {
+    if (!fileName) return false;
+    return fileName.toLowerCase().endsWith('.zip');
+}
