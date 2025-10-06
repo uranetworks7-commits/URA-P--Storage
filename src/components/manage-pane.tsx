@@ -158,6 +158,8 @@ export function ManagePane() {
   const diaryEntries = useMemo(() => userData?.diary ? Object.entries(userData.diary).sort((a, b) => b[1].timestamp - a[1].timestamp) : [], [userData?.diary]);
   const files = useMemo(() => userData?.files ? Object.entries(userData.files).sort((a, b) => b[1].timestamp - a[1].timestamp) : [], [userData?.files]);
 
+  const latestFile = files.length > 0 ? files[0][1] : null;
+
   const handleUndo = async (item: ItemToDelete) => {
     if (!userId || item.type !== 'diary') return;
     
@@ -425,12 +427,19 @@ export function ManagePane() {
           </div>
           <div>
             <div className="flex justify-between items-center mb-1">
-              <h3 className="font-semibold text-xs flex items-center gap-2">
+              <h3 className="font-semibold text-xs flex items-center gap-2 truncate">
                 <FileIcon className="h-3 w-3" />
-                Uploaded Files
+                {latestFile ? (
+                  <>
+                  <span className="text-muted-foreground">Latest:</span>
+                  <span className="font-normal truncate" title={latestFile.name}>{latestFile.name}</span>
+                  </>
+                ) : (
+                  "Uploaded Files"
+                )}
               </h3>
-              <Link href="/files" className="flex items-center gap-2 text-xs font-semibold text-blue-600 hover:underline">
-                <span>Your files</span>
+              <Link href="/files" className="flex items-center gap-2 text-xs font-semibold text-blue-600 hover:underline flex-shrink-0 ml-2">
+                <span>Files</span>
                 <Image src="https://files.catbox.moe/09twlp.png" alt="Files" width={20} height={20} className="rounded-sm" />
               </Link>
             </div>
@@ -764,8 +773,7 @@ export function ManagePane() {
                     <p className="text-xs text-muted-foreground">The URL is now selected. Press and hold to copy.</p>
                 </div>
                  <DialogFooter>
-                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setSharedFileUrl(null)}>Close</Button>
-                     <Button size="sm" className="h-8 text-xs" onClick={() => { navigator.clipboard.writeText(sharedFileUrl); toast({ title: "Copied!", description: "File URL copied to clipboard." })}}>
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setSharedFileUrl(null)}>Close</Button>                     <Button size="sm" className="h-8 text-xs" onClick={() => { navigator.clipboard.writeText(sharedFileUrl); toast({ title: "Copied!", description: "File URL copied to clipboard." })}}>
                         <Copy className="mr-2 h-3 w-3"/> Copy
                     </Button>
                 </DialogFooter>
