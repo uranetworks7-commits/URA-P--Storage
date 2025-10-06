@@ -1,4 +1,5 @@
 
+
       
 "use client";
 
@@ -429,17 +430,12 @@ export function ManagePane() {
             <div className="flex justify-between items-center mb-1">
               <h3 className="font-semibold text-xs flex items-center gap-2 truncate">
                 <FileIcon className="h-3 w-3" />
-                {latestFile ? (
-                  <>
-                  <span className="text-muted-foreground">Latest:</span>
-                  <span className="font-normal truncate" title={latestFile.name}>{latestFile.name}</span>
-                  </>
-                ) : (
-                  "Uploaded Files"
-                )}
+                Uploaded Files
               </h3>
               <Link href="/files" className="flex items-center gap-2 text-xs font-semibold text-blue-600 hover:underline flex-shrink-0 ml-2">
-                <span>Files</span>
+                <span className="truncate max-w-[120px]" title={latestFile?.name}>
+                  {latestFile ? latestFile.name : 'Files'}
+                </span>
                 <Image src="https://files.catbox.moe/09twlp.png" alt="Files" width={20} height={20} className="rounded-sm" />
               </Link>
             </div>
