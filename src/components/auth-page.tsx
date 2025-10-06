@@ -27,9 +27,13 @@ import { AlertTriangle, LogIn, UserPlus, ShieldAlert } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+const userIdSchema = z.string().refine(val => /^\d{6}$/.test(val) || /^#\d{6}$/.test(val), {
+  message: "ID must be 6 digits, optionally prefixed with #.",
+});
+
 // Schema for new user creation
 const createSchema = z.object({
-  userId: z.string().min(1, "ID is required.").max(7, "ID is too long."),
+  userId: userIdSchema,
   username: z.string().optional(),
   email: z.string().email("Invalid email address.").optional().or(z.literal('')),
   terms: z.boolean(),
@@ -37,7 +41,7 @@ const createSchema = z.object({
 
 // Schema for existing user login
 const loginSchema = z.object({
-  userId: z.string().min(1, "ID is required.").max(7, "ID is too long."),
+  userId: userIdSchema,
 });
 
 const unlockSchema = z.object({

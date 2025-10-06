@@ -31,7 +31,7 @@ export async function loginUser(
   const numericId = isSpecialAccount ? userId.substring(1) : userId;
 
   if (!/^\d{6}$/.test(numericId)) {
-    return { success: false, message: "Please enter a valid 6-digit numeric ID, optionally prefixed with #" };
+    return { success: false, message: "Please enter a valid 6-digit numeric ID." };
   }
 
   const dbUserId = getDbSafeUserId(userId);
@@ -67,7 +67,7 @@ export async function loginOrCreateUser(
   const numericId = isSpecialAccount ? userId.substring(1) : userId;
 
   if (!/^\d{6}$/.test(numericId)) {
-    return { success: false, message: "Please enter a valid 6-digit numeric ID, optionally prefixed with #" };
+    return { success: false, message: "Please enter a valid 6-digit numeric ID." };
   }
 
   const dbUserId = getDbSafeUserId(userId);
@@ -309,7 +309,7 @@ export async function uploadFileAndSave(
 
     const filesRef = ref(db, `users/${dbUserId}/files`);
     const newFileRef = push(filesRef);
-    await set(newFileRef, fileRecord);
+await set(newFileRef, fileRecord);
     
     await update(userRef, { usageBytes: currentUsage + file.size });
     
@@ -395,7 +395,7 @@ export async function deleteItem(userId: string, itemType: 'diary' | 'files', it
     return { success: false, message: "Missing required information for deletion." };
   }
 
-  const dbUserId = getDbSafeUserId(userId);
+  const dbUserId = getDbsafeUserId(userId);
 
   try {
     const userRef = ref(db, `users/${dbUserId}`);
@@ -426,7 +426,5 @@ export async function deleteItem(userId: string, itemType: 'diary' | 'files', it
     return { success: false, message: URA_ERROR_503 };
   }
 }
-
-    
 
     
