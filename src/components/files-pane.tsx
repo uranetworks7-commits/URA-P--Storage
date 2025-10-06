@@ -112,7 +112,7 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
           Upload a File
         </CardTitle>
         <CardDescription className="text-xs">
-          Files are Securely stored in URA Data SERVER.
+          Files are encrypted and stored securely.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-3 pt-0">
@@ -139,7 +139,7 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
           )}
 
           {fileTooLarge && (
-            <p className="text-xs text-destructive">We can't upload more than 1 Mb once, Please Upload through URL.</p>
+            <p className="text-xs text-destructive">File too large (max 1MB). Please use the URL upload option for larger files.</p>
           )}
           
           {isPending && <Progress value={undefined} className="animate-pulse h-1.5" />}
@@ -203,3 +203,5 @@ export function FilesPane({ isOverQuota }: { isOverQuota: boolean }) {
     </Card>
   );
 }
+
+    

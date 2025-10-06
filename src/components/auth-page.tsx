@@ -150,11 +150,11 @@ export function AuthPage() {
               </CardHeader>
               <CardContent className="space-y-2 p-4 pt-0">
                 <div className="space-y-1">
-                  <Label htmlFor="login-userId" className="text-xs">6-Digit ID (or #123456)</Label>
+                  <Label htmlFor="login-userId" className="text-xs">6-Digit ID</Label>
                   <Input
                     id="login-userId"
                     name="userId"
-                    placeholder="e.g. 123456 or #123456"
+                    placeholder="e.g. 123456"
                     maxLength={7}
                     {...loginForm.register("userId")}
                     className="h-8 text-sm"
@@ -187,11 +187,11 @@ export function AuthPage() {
               </CardHeader>
               <CardContent className="space-y-2 p-4 pt-0">
                 <div className="space-y-1">
-                  <Label htmlFor="create-userId" className="text-xs">Choose Your 6-Digit ID (or #123456)</Label>
+                  <Label htmlFor="create-userId" className="text-xs">Choose Your 6-Digit ID</Label>
                   <Input
                     id="create-userId"
                     name="userId"
-                    placeholder="e.g. 654321 or #654321"
+                    placeholder="e.g. 654321"
                     maxLength={7}
                     {...createForm.register("userId")}
                     className="h-8 text-sm"
@@ -280,3 +280,5 @@ export function AuthPage() {
     </div>
   );
 }
+
+    
