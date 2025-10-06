@@ -159,8 +159,6 @@ export function ManagePane() {
   const diaryEntries = useMemo(() => userData?.diary ? Object.entries(userData.diary).sort((a, b) => b[1].timestamp - a[1].timestamp) : [], [userData?.diary]);
   const files = useMemo(() => userData?.files ? Object.entries(userData.files).sort((a, b) => b[1].timestamp - a[1].timestamp) : [], [userData?.files]);
 
-  const latestFile = files.length > 0 ? files[0][1] : null;
-
   const handleUndo = async (item: ItemToDelete) => {
     if (!userId || item.type !== 'diary') return;
     
@@ -212,30 +210,8 @@ export function ManagePane() {
     URL.revokeObjectURL(url);
   }
 
-  const downloadFile = async (file: StoredFile) => {
-    try {
-      toast({ title: "Starting download...", description: file.name });
-      const response = await fetch(file.url);
-      if (!response.ok) {
-        throw new Error('Network response was not ok.');
-      }
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', file.name);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Download failed:", error);
-      toast({
-        variant: "destructive",
-        title: "Download failed",
-        description: "Could not download the file. Please try again.",
-      });
-    }
+  const downloadFile = (file: StoredFile) => {
+    window.open(file.url, '_blank');
   };
   
   const handleGenerateShareCode = () => {
@@ -428,14 +404,12 @@ export function ManagePane() {
           </div>
           <div>
             <div className="flex justify-between items-center mb-1">
-              <h3 className="font-semibold text-xs flex items-center gap-2 truncate">
+              <h3 className="font-semibold text-xs flex items-center gap-2">
                 <FileIcon className="h-3 w-3" />
                 Uploaded Files
               </h3>
-              <Link href="/files" className="flex items-center gap-2 text-xs font-semibold text-blue-600 hover:underline flex-shrink-0 ml-2">
-                <span className="truncate max-w-[120px]" title={latestFile?.name}>
-                  {latestFile ? latestFile.name : 'Files'}
-                </span>
+              <Link href="/files" className="flex items-center gap-2 text-xs font-semibold text-blue-600 hover:underline">
+                Files
                 <Image src="https://files.catbox.moe/09twlp.png" alt="Files" width={20} height={20} className="rounded-sm" />
               </Link>
             </div>

@@ -8,7 +8,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { ArrowLeft, Search, File as FileIcon, Download, Film, Music, FileQuestion, Eye } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -88,17 +88,14 @@ export default function FilesPage() {
         {filteredFiles.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {filteredFiles.map(file => (
-              <Card key={file.id} className="group relative overflow-hidden aspect-square flex flex-col justify-between">
-                <div className="absolute inset-0 flex items-center justify-center bg-secondary/30">
+              <Card key={file.id} className="group relative overflow-hidden aspect-square flex flex-col">
+                <CardContent className="flex-grow flex items-center justify-center p-0 relative bg-secondary/30">
                   {getFileIcon(file)}
-                </div>
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-                  <div />
-                  <div>
-                    <p className="text-xs font-bold text-white truncate">{file.name}</p>
-                    <p className="text-xs text-white/80">{formatBytes(file.size)}</p>
-                  </div>
-                </div>
+                </CardContent>
+                <CardFooter className="p-2 flex-col items-start bg-card">
+                    <p className="text-xs font-bold text-foreground truncate w-full">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">{formatBytes(file.size)}</p>
+                </CardFooter>
                  <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                    <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => setViewingFile(file)}>
                       <Eye className="h-4 w-4" />
