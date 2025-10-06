@@ -43,7 +43,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox, Eye, Film, Music, FileQuestion, Link as LinkIcon, FileText } from "lucide-react";
+import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox, Eye, Film, Music, FileQuestion, Link as LinkIcon, FileText, FileArchive } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -211,10 +211,6 @@ export function ManagePane() {
   }
 
   const downloadFile = (file: StoredFile) => {
-    if (isPdfFile(file.name) || isZipFile(file.name)) {
-        window.open(file.url, '_blank');
-        return;
-    }
     try {
       toast({ title: "Starting download...", description: file.name });
       fetch(file.url)
@@ -248,11 +244,7 @@ export function ManagePane() {
   };
 
   const handleViewFileClick = (file: StoredFile) => {
-    if (isPdfFile(file.name) || isZipFile(file.name)) {
-      window.open(file.url, '_blank');
-    } else {
-      setViewingFile(file);
-    }
+    setViewingFile(file);
   };
   
   const handleGenerateShareCode = () => {
@@ -399,13 +391,16 @@ export function ManagePane() {
     if (isPdfFile(file.name)) {
       return <FileText className="h-6 w-6 text-muted-foreground" />;
     }
+     if (isZipFile(file.name)) {
+      return <FileArchive className="h-6 w-6 text-muted-foreground" />;
+    }
     if (isVideoFile(file.name)) {
       return <Film className="h-6 w-6 text-muted-foreground" />;
     }
     if (isAudioFile(file.name)) {
       return <Music className="h-6 w-6 text-muted-foreground" />;
     }
-    if (file.type === 'application/octet-stream' || isZipFile(file.name)) {
+    if (file.type === 'application/octet-stream') {
         return <FileQuestion className="h-6 w-6 text-muted-foreground" />;
     }
     return <FileIcon className="h-6 w-6 text-muted-foreground" />;
@@ -680,13 +675,16 @@ export function ManagePane() {
         )}
         {viewingFile && (
           <Dialog open={!!viewingFile} onOpenChange={() => setViewingFile(null)}>
-              <DialogContent className="max-w-3xl p-2">
+              <DialogContent className="max-w-3xl p-2 h-[90vh]">
                   <DialogHeader>
                       <DialogTitle className="text-base">{viewingFile.name}</DialogTitle>
                   </DialogHeader>
-                   <div className="flex items-center justify-center p-4">
+                   <div className="flex items-center justify-center p-4 h-full">
                      {isImageFile(viewingFile.name) && (
                          <Image src={viewingFile.url} alt={viewingFile.name} width={800} height={600} className="object-contain max-h-[70vh] rounded" />
+                     )}
+                     {isPdfFile(viewingFile.name) && (
+                        <iframe src={viewingFile.url} className="w-full h-full border-0" title={viewingFile.name}></iframe>
                      )}
                      {isVideoFile(viewingFile.name) && (
                          <video src={viewingFile.url} controls className="max-h-[70vh] rounded w-full">
@@ -698,9 +696,9 @@ export function ManagePane() {
                              Your browser does not support the audio element.
                          </audio>
                      )}
-                      {!isImageFile(viewingFile.name) && !isVideoFile(viewingFile.name) && !isAudioFile(viewingFile.name) && (
+                      {!isImageFile(viewingFile.name) && !isVideoFile(viewingFile.name) && !isAudioFile(viewingFile.name) && !isPdfFile(viewingFile.name) && (
                         <div className="flex flex-col items-center justify-center gap-4 p-8 bg-secondary/30 rounded-lg">
-                            {isPdfFile(viewingFile.name) ? <FileText className="h-16 w-16 text-muted-foreground" /> : (viewingFile.type === 'application/octet-stream' || isZipFile(viewingFile.name) ? <FileQuestion className="h-16 w-16 text-muted-foreground" /> : <FileIcon className="h-16 w-16 text-muted-foreground" />)}
+                            {isZipFile(viewingFile.name) ? <FileArchive className="h-16 w-16 text-muted-foreground" /> : (viewingFile.type === 'application/octet-stream' ? <FileQuestion className="h-16 w-16 text-muted-foreground" /> : <FileIcon className="h-16 w-16 text-muted-foreground" />)}
                             <div className="text-center text-sm">
                                 <p className="font-semibold">{viewingFile.name}</p>
                                 <p className="text-muted-foreground">{formatBytes(viewingFile.size)}</p>
