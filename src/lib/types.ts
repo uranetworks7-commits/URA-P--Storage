@@ -1,3 +1,4 @@
+
 export interface DiaryEntry {
   text: string;
   timestamp: number;
@@ -19,6 +20,7 @@ export interface UserData {
   diary?: Record<string, DiaryEntry>;
   files?: Record<string, StoredFile>;
   premium?: boolean;
+  special?: boolean;
   locked?: boolean;
   unlockCode?: string;
 }

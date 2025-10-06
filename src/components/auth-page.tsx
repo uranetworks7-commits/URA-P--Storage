@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -28,7 +29,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 // Schema for new user creation
 const createSchema = z.object({
-  userId: z.string().length(6, "ID must be 6 digits.").regex(/^\d{6}$/, "ID must be numeric."),
+  userId: z.string().min(1, "ID is required.").max(7, "ID is too long."),
   username: z.string().optional(),
   email: z.string().email("Invalid email address.").optional().or(z.literal('')),
   terms: z.boolean(),
@@ -36,7 +37,7 @@ const createSchema = z.object({
 
 // Schema for existing user login
 const loginSchema = z.object({
-  userId: z.string().length(6, "ID must be 6 digits.").regex(/^\d{6}$/, "ID must be numeric."),
+  userId: z.string().min(1, "ID is required.").max(7, "ID is too long."),
 });
 
 const unlockSchema = z.object({
@@ -149,12 +150,12 @@ export function AuthPage() {
               </CardHeader>
               <CardContent className="space-y-2 p-4 pt-0">
                 <div className="space-y-1">
-                  <Label htmlFor="login-userId" className="text-xs">6-Digit ID</Label>
+                  <Label htmlFor="login-userId" className="text-xs">6-Digit ID (or #123456)</Label>
                   <Input
                     id="login-userId"
                     name="userId"
-                    placeholder="e.g. 123456"
-                    maxLength={6}
+                    placeholder="e.g. 123456 or #123456"
+                    maxLength={7}
                     {...loginForm.register("userId")}
                     className="h-8 text-sm"
                   />
@@ -164,7 +165,7 @@ export function AuthPage() {
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle className="text-sm font-bold">Warning</AlertTitle>
                     <AlertDescription className="text-xs">
-                    Do not share your 6-digit ID. Keep it private — it's the only key to your data.
+                    Do not share your ID. Keep it private — it's the only key to your data.
                     </AlertDescription>
                 </Alert>
               </CardContent>
@@ -186,12 +187,12 @@ export function AuthPage() {
               </CardHeader>
               <CardContent className="space-y-2 p-4 pt-0">
                 <div className="space-y-1">
-                  <Label htmlFor="create-userId" className="text-xs">Choose Your 6-Digit ID</Label>
+                  <Label htmlFor="create-userId" className="text-xs">Choose Your 6-Digit ID (or #123456)</Label>
                   <Input
                     id="create-userId"
                     name="userId"
-                    placeholder="e.g. 654321"
-                    maxLength={6}
+                    placeholder="e.g. 654321 or #654321"
+                    maxLength={7}
                     {...createForm.register("userId")}
                     className="h-8 text-sm"
                   />

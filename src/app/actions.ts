@@ -15,18 +15,24 @@ const URA_ERROR_503 = "URA-FS Error: 503. Service unavailable. Please check your
 
 const ONE_MB = 1048576;
 const ONE_GB = 1073741824;
+const ONE_TB = 1099511627776;
 
 export async function loginOrCreateUser(
   userId: string,
   username: string,
   email: string
 ): Promise<FormState> {
-  if (!/^\d{6}$/.test(userId)) {
-    return { success: false, message: "Please enter a valid 6-digit numeric ID" };
+  const isSpecialAccount = userId.startsWith('#');
+  const numericId = isSpecialAccount ? userId.substring(1) : userId;
+
+  if (!/^\d{6}$/.test(numericId)) {
+    return { success: false, message: "Please enter a valid 6-digit numeric ID, optionally prefixed with #" };
   }
 
+  const finalUserId = isSpecialAccount ? `#${numericId}` : numericId;
+
   try {
-    const userRef = ref(db, `users/${userId}`);
+    const userRef = ref(db, `users/${finalUserId}`);
     const snapshot = await get(userRef);
 
     if (!snapshot.exists()) {
@@ -37,6 +43,7 @@ export async function loginOrCreateUser(
         usageBytes: 0,
         locked: false,
         unlockCode: null,
+        special: isSpecialAccount,
       });
     } else {
        const userData = snapshot.val();
@@ -51,7 +58,7 @@ export async function loginOrCreateUser(
       }
     }
     revalidatePath("/");
-    return { success: true, message: `Welcome, ${userId}!` };
+    return { success: true, message: `Welcome, ${finalUserId}!` };
   } catch (error) {
     console.error("Login/Create User Error:", error);
     return { success: false, message: URA_ERROR_503 };
@@ -60,7 +67,7 @@ export async function loginOrCreateUser(
 
 export async function lockAccount(prevState: FormState, formData: FormData): Promise<FormState> {
   const userId = formData.get("userId") as string;
-  if (!userId || !/^\d{6}$/.test(userId)) {
+  if (!userId) {
     return { success: false, message: "Invalid User ID provided." };
   }
 
@@ -218,7 +225,9 @@ export async function uploadFileAndSave(
     const userData = userSnapshot.val();
     const currentUsage = userData.usageBytes || 0;
     const isPremium = userData.premium === true;
-    const quota = isPremium ? 2 * ONE_GB : ONE_GB;
+    const isSpecial = userData.special === true;
+    const quota = isSpecial ? ONE_TB : (isPremium ? 2 * ONE_GB : ONE_GB);
+
 
     if (currentUsage + file.size > quota) {
       return { success: false, message: "Storage limit exceeded. Please upgrade to premium or delete files." };
@@ -283,7 +292,9 @@ export async function uploadFileFromUrlAndSave(
      // Check quota
     const currentUsage = userData.usageBytes || 0;
     const isPremium = userData.premium === true;
-    const quota = isPremium ? 2 * ONE_GB : ONE_GB;
+    const isSpecial = userData.special === true;
+    const quota = isSpecial ? ONE_TB : (isPremium ? 2 * ONE_GB : ONE_GB);
+
 
     if (currentUsage + file.size > quota) {
       return { success: false, message: "Storage limit exceeded. Please upgrade to premium or delete files." };

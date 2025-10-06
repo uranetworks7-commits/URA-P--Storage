@@ -43,6 +43,27 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Book, File as FileIcon, Trash2, ExternalLink, Database, Download, FolderOpen, Pencil, Save, Share2, Upload, Copy, AlertCircle, Inbox, Eye, Film, Music, FileQuestion, Link as LinkIcon } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+
+const ZIcon = () => (
+  <div style={{
+    width: '20px',
+    height: '20px',
+    backgroundColor: '#4CAF50',
+    color: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 'bold',
+    fontSize: '16px',
+    borderRadius: '4px',
+    boxShadow: '2px 2px 5px rgba(0,0,0,0.3)',
+    transform: 'perspective(100px) rotateY(-10deg)',
+  }}>
+    Z
+  </div>
+);
+
 
 type ItemToDelete = {
   id: string;
@@ -402,7 +423,12 @@ export function ManagePane() {
             </ScrollArea>
           </div>
           <div>
-            <h3 className="font-semibold mb-1 text-xs flex items-center gap-2"><FileIcon className="h-3 w-3"/>Uploaded Files</h3>
+            <h3 className="font-semibold mb-1 text-xs flex items-center gap-2">
+              <Link href="/files" className="cursor-pointer">
+                <ZIcon />
+              </Link>
+              Uploaded Files
+            </h3>
              <ScrollArea className="h-48 rounded-md border p-1">
               {files.length > 0 ? files.map(([id, file]: [string, StoredFile]) => (
                 <div key={id} className="group mb-1 last:mb-0">
@@ -745,5 +771,3 @@ export function ManagePane() {
     </Card>
   );
 }
-
-    

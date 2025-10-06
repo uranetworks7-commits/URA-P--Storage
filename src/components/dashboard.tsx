@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -10,17 +11,19 @@ import { Logo } from "@/components/logo";
 import { DiaryPane } from "@/components/diary-pane";
 import { FilesPane } from "@/components/files-pane";
 import { ManagePane } from "@/components/manage-pane";
-import { LogOut, AlertTriangle, Zap, Star, CloudAlert } from "lucide-react";
+import { LogOut, AlertTriangle, Zap, Star, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 
 const ONE_GB = 1073741824;
+const ONE_TB = 1099511627776;
 
 export function Dashboard() {
   const { userId, userData, logout } = useAuth();
   const usage = userData?.usageBytes ?? 0;
   const isPremium = userData?.premium === true;
-  const quota = isPremium ? 2 * ONE_GB : ONE_GB;
+  const isSpecial = userData?.special === true;
+  const quota = isSpecial ? ONE_TB : (isPremium ? 2 * ONE_GB : ONE_GB);
   const usagePercentage = (usage / quota) * 100;
   const isOverQuota = usage > quota;
 
@@ -42,13 +45,14 @@ export function Dashboard() {
             <p className="text-muted-foreground text-xs">
               ID: <span className="font-semibold font-code">{userId}</span>
               {isPremium && <span className="ml-2 inline-flex items-center text-yellow-500 text-xs"><Star className="h-3 w-3 mr-1" /> Premium</span>}
+              {isSpecial && <span className="ml-2 inline-flex items-center text-purple-500 text-xs"><Star className="h-3 w-3 mr-1" /> Special</span>}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-red-500">
+           <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-100 hover:text-red-600">
             <Link href="/safety">
-                <CloudAlert className="h-5 w-5"/>
+                <ShieldAlert className="h-5 w-5"/>
             </Link>
           </Button>
           <Button variant="ghost" size="sm" onClick={logout} className="h-8">
@@ -110,7 +114,7 @@ export function Dashboard() {
                 </AlertDescription>
               </Alert>
             )}
-             {!isPremium && usage > 0.8 * ONE_GB && (
+             {!isPremium && !isSpecial && usage > 0.8 * ONE_GB && (
               <Alert className="mt-2 p-2 border-primary/50 text-primary">
                 <Star className="h-3 w-3 text-primary" />
                 <AlertTitle className="text-xs font-bold">Upgrade to Premium</AlertTitle>
