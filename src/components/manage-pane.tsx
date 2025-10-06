@@ -1,4 +1,5 @@
 
+      
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -428,7 +429,7 @@ export function ManagePane() {
                 <FileIcon className="h-3 w-3" />
                 Uploaded Files
               </h3>
-              <Link href="/files" className="flex items-center gap-2 text-xs font-semibold text-primary hover:underline">
+              <Link href="/files" className="flex items-center gap-2 text-xs font-semibold text-blue-600 hover:underline">
                 <span>Your files</span>
                 <Image src="https://files.catbox.moe/09twlp.png" alt="Files" width={20} height={20} className="rounded-sm" />
               </Link>
@@ -775,3 +776,5 @@ export function ManagePane() {
     </Card>
   );
 }
+
+    
