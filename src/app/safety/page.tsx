@@ -5,18 +5,18 @@ import { useState, useRef, useEffect, useTransition } from "react";
 import { useRouter } from 'next/navigation';
 import { useAuth } from "@/hooks/use-auth";
 import { useActionState } from 'react';
-import { lockAccount } from "@/app/actions";
+import { lockAccount, changeUserId } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ShieldQuestion, Copy, ArrowLeft, ShieldOff, ShieldCheck, Shield, Lock, KeyRound, ShieldAlert } from "lucide-react";
+import { ShieldQuestion, Copy, ArrowLeft, ShieldOff, ShieldCheck, Shield, Lock, KeyRound, ShieldAlert, BadgePercent, UserCog } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 
-type SafetyViewState = 'main' | 'download_help' | 'lock_account' | 'locking' | 'locked';
+type SafetyViewState = 'main' | 'download_help' | 'lock_account' | 'locking' | 'locked' | 'change_id';
 
 const LockAnimation = () => (
     <div className="relative h-24 w-24">
@@ -60,7 +60,7 @@ const LockAnimation = () => (
 
 
 export default function SafetyPage() {
-    const { userId, logout } = useAuth();
+    const { userId, logout, relogin } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
     const [viewState, setViewState] = useState<SafetyViewState>('main');
@@ -69,9 +69,11 @@ export default function SafetyPage() {
     const urlTextareaRef = useRef<HTMLTextAreaElement>(null);
     const codeRef = useRef<HTMLParagraphElement>(null);
 
-    const [isPending, startTransition] = useTransition();
+    const [isLockPending, startLockTransition] = useTransition();
+    const [isChangeIdPending, startChangeIdTransition] = useTransition();
 
     const [lockState, lockAction] = useActionState(lockAccount, { success: false, message: "" });
+    const [changeIdState, changeIdAction] = useActionState(changeUserId, { success: false, message: "" });
 
     const handleLockAccountSubmit = (formData: FormData) => {
         if (confirmId !== userId) {
@@ -82,10 +84,16 @@ export default function SafetyPage() {
             });
             return;
         }
-        startTransition(() => {
+        startLockTransition(() => {
             lockAction(formData);
         });
     };
+    
+    const handleChangeIdSubmit = (formData: FormData) => {
+        startChangeIdTransition(() => {
+            changeIdAction(formData);
+        });
+    }
 
     useEffect(() => {
         if(viewState === 'download_help' && urlTextareaRef.current) {
@@ -94,16 +102,14 @@ export default function SafetyPage() {
     }, [viewState]);
 
     useEffect(() => {
-        if (isPending) {
+        if (isLockPending) {
             setViewState('locking');
         }
-    }, [isPending]);
+    }, [isLockPending]);
 
     useEffect(() => {
-        if (lockState.message) { // This will run after the action is complete
+        if (lockState.message && !isLockPending) { // This will run after the action is complete
             if (lockState.success) {
-                // The animation has been playing via the isPending effect.
-                // Now we transition to the final locked state.
                  setTimeout(() => {
                     setViewState('locked');
                     setTimeout(() => {
@@ -125,7 +131,26 @@ export default function SafetyPage() {
                 setViewState('lock_account');
             }
         }
-    }, [lockState, toast]);
+    }, [lockState, isLockPending, toast]);
+
+    useEffect(() => {
+        if (changeIdState.message && !isChangeIdPending) {
+            if (changeIdState.success && changeIdState.newUserId) {
+                toast({
+                    title: "Success!",
+                    description: changeIdState.message,
+                });
+                relogin(changeIdState.newUserId);
+                router.push('/');
+            } else if (!changeIdState.success) {
+                toast({
+                    variant: "destructive",
+                    title: "Change ID Failed",
+                    description: changeIdState.message,
+                });
+            }
+        }
+    }, [changeIdState, isChangeIdPending, toast, relogin, router]);
 
     const renderContent = () => {
         switch (viewState) {
@@ -137,6 +162,13 @@ export default function SafetyPage() {
                             <div>
                                 <p className="font-semibold text-sm">I can't Copy & Download My Files</p>
                                 <p className="text-xs text-muted-foreground">Get help if you're having trouble.</p>
+                            </div>
+                        </Button>
+                         <Button variant="outline" className="h-auto justify-start text-left p-3" onClick={() => setViewState('change_id')}>
+                            <UserCog className="h-5 w-5 mr-3"/>
+                            <div>
+                                <p className="font-semibold text-sm">Change My 6-Digit ID</p>
+                                <p className="text-xs text-muted-foreground">Update your login ID.</p>
                             </div>
                         </Button>
                          <Button variant="outline" className="h-auto justify-start text-left p-3 border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/10" onClick={() => setViewState('lock_account')}>
@@ -167,6 +199,39 @@ export default function SafetyPage() {
                         </Button>
                     </CardContent>
                 );
+            
+            case 'change_id':
+                return (
+                    <CardContent className="p-4 pt-0">
+                         <Button variant="ghost" size="sm" className="mb-2" onClick={() => setViewState('main')}><ArrowLeft className="mr-2 h-4 w-4"/>Back</Button>
+                        <form action={handleChangeIdSubmit} className="space-y-3">
+                            <input type="hidden" name="oldUserId" value={userId || ""} />
+                             <Alert className="p-3">
+                                <UserCog className="h-4 w-4" />
+                                <AlertTitle className="text-sm">Change Your ID</AlertTitle>
+                                <AlertDescription className="text-xs">
+                                   Enter your old ID and choose a new one. This will change how you log in.
+                                </AlertDescription>
+                            </Alert>
+                            <div className="space-y-1">
+                                <Label htmlFor="new-id" className="text-xs">New 6-Digit ID</Label>
+                                <Input id="new-id" name="newUserId" maxLength={7} placeholder="Enter new ID" required className="h-9 text-sm" />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="confirm-new-id" className="text-xs">Confirm New ID</Label>
+                                <Input id="confirm-new-id" name="confirmNewUserId" maxLength={7} placeholder="Confirm new ID" required className="h-9 text-sm" />
+                            </div>
+                             <div className="space-y-1">
+                                <Label htmlFor="old-id" className="text-xs">Current 6-Digit ID</Label>
+                                <Input id="old-id" name="currentUserId" defaultValue={userId || ""} readOnly className="h-9 text-sm bg-secondary" />
+                            </div>
+                            <Button type="submit" className="w-full h-9" disabled={isChangeIdPending}>
+                                <UserCog className="mr-2 h-4 w-4"/>
+                                {isChangeIdPending ? "Changing..." : "Change My ID"}
+                            </Button>
+                        </form>
+                    </CardContent>
+                );
 
             case 'lock_account':
                 return (
@@ -188,14 +253,14 @@ export default function SafetyPage() {
                                     name="confirmId"
                                     value={confirmId}
                                     onChange={(e) => setConfirmId(e.target.value)}
-                                    maxLength={6}
+                                    maxLength={7}
                                     placeholder="Confirm your ID"
                                     className="h-9 text-sm"
                                 />
                             </div>
-                            <Button type="submit" variant="destructive" className="w-full h-9" disabled={isPending}>
+                            <Button type="submit" variant="destructive" className="w-full h-9" disabled={isLockPending}>
                                 <ShieldOff className="mr-2 h-4 w-4"/>
-                                {isPending ? "Securing..." : "Lock My Account"}
+                                {isLockPending ? "Securing..." : "Lock My Account"}
                             </Button>
                         </form>
                     </CardContent>

@@ -9,6 +9,7 @@ type FormState = {
   success: boolean;
   message: string;
   unlockCode?: string;
+  newUserId?: string;
 };
 
 const URA_ERROR_503 = "URA-FS Error: 503. Service unavailable. Please check your connection or try again later.";
@@ -28,9 +29,11 @@ export async function loginUser(
   userId: string,
 ): Promise<FormState> {
   const isSpecialAccount = userId.startsWith('#');
-  const numericId = isSpecialAccount ? userId.substring(1) : userId;
 
-  if (!/^\d{6}$/.test(numericId)) {
+  if (!isSpecialAccount && !/^\d{6}$/.test(userId)) {
+    return { success: false, message: "Please enter a valid 6-digit numeric ID." };
+  }
+   if (isSpecialAccount && !/^#\d{6}$/.test(userId)) {
     return { success: false, message: "Please enter a valid 6-digit numeric ID." };
   }
 
@@ -64,9 +67,11 @@ export async function loginOrCreateUser(
   email: string
 ): Promise<FormState> {
   const isSpecialAccount = userId.startsWith('#');
-  const numericId = isSpecialAccount ? userId.substring(1) : userId;
 
-  if (!/^\d{6}$/.test(numericId)) {
+  if (!isSpecialAccount && !/^\d{6}$/.test(userId)) {
+    return { success: false, message: "Please enter a valid 6-digit numeric ID." };
+  }
+  if (isSpecialAccount && !/^#\d{6}$/.test(userId)) {
     return { success: false, message: "Please enter a valid 6-digit numeric ID." };
   }
 
@@ -106,6 +111,69 @@ export async function loginOrCreateUser(
     return { success: false, message: URA_ERROR_503 };
   }
 }
+
+export async function changeUserId(prevState: FormState, formData: FormData): Promise<FormState> {
+    const oldUserId = formData.get("oldUserId") as string;
+    const newUserId = formData.get("newUserId") as string;
+    const confirmNewUserId = formData.get("confirmNewUserId") as string;
+
+    if (!oldUserId || !newUserId || !confirmNewUserId) {
+        return { success: false, message: "All fields are required." };
+    }
+
+    if (newUserId !== confirmNewUserId) {
+        return { success: false, message: "New IDs do not match." };
+    }
+    
+    const isNewSpecial = newUserId.startsWith('#');
+    if (!isNewSpecial && !/^\d{6}$/.test(newUserId)) {
+      return { success: false, message: "New ID must be 6 numeric digits." };
+    }
+     if (isNewSpecial && !/^#\d{6}$/.test(newUserId)) {
+      return { success: false, message: "New ID must be 6 numeric digits, optionally prefixed with #." };
+    }
+
+    const oldDbUserId = getDbSafeUserId(oldUserId);
+    const newDbUserId = getDbSafeUserId(newUserId);
+
+    if (oldDbUserId === newDbUserId) {
+        return { success: false, message: "New ID cannot be the same as the old ID." };
+    }
+
+    try {
+        const oldUserRef = ref(db, `users/${oldDbUserId}`);
+        const oldUserSnapshot = await get(oldUserRef);
+
+        if (!oldUserSnapshot.exists()) {
+            // This should not happen if the user is logged in, but it's a good safeguard.
+            return { success: false, message: "Your old User ID could not be found." };
+        }
+
+        const newUserRef = ref(db, `users/${newDbUserId}`);
+        const newUserSnapshot = await get(newUserRef);
+
+        if (newUserSnapshot.exists()) {
+            return { success: false, message: "The new User ID is already taken. Please choose another." };
+        }
+        
+        const userData = oldUserSnapshot.val();
+
+        // Multi-path update to move data atomically
+        const updates: { [key: string]: any } = {};
+        updates[`/users/${newDbUserId}`] = userData;
+        updates[`/users/${oldDbUserId}`] = null; // Delete old user data
+
+        await update(ref(db), updates);
+
+        revalidatePath("/");
+        return { success: true, message: `Your ID has been changed to ${newUserId}.`, newUserId: newUserId };
+
+    } catch(error) {
+        console.error("Change User ID Error:", error);
+        return { success: false, message: URA_ERROR_503 };
+    }
+}
+
 
 export async function lockAccount(prevState: FormState, formData: FormData): Promise<FormState> {
   const userId = formData.get("userId") as string;
@@ -395,7 +463,7 @@ export async function deleteItem(userId: string, itemType: 'diary' | 'files', it
     return { success: false, message: "Missing required information for deletion." };
   }
 
-  const dbUserId = getDbsafeUserId(userId);
+  const dbUserId = getDbSafeUserId(userId);
 
   try {
     const userRef = ref(db, `users/${dbUserId}`);
@@ -426,5 +494,3 @@ export async function deleteItem(userId: string, itemType: 'diary' | 'files', it
     return { success: false, message: URA_ERROR_503 };
   }
 }
-
-    

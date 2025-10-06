@@ -11,6 +11,7 @@ interface AuthContextType {
   userData: UserData | null;
   loading: boolean;
   login: (id: string) => void;
+  relogin: (id: string) => void;
   logout: () => void;
 }
 
@@ -78,6 +79,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const relogin = (id: string) => {
+    // This is used after an ID change to update the state and localStorage
+    login(id);
+  };
+
   const logout = () => {
     try {
       localStorage.removeItem(AUTH_KEY);
@@ -88,10 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ userId, userData, loading, login, logout }}>
+    <AuthContext.Provider value={{ userId, userData, loading, login, relogin, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
-
-    
