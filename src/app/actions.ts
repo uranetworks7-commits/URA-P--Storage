@@ -152,6 +152,22 @@ export async function saveDiaryEntry(
   const dbUserId = getDbSafeUserId(userId);
   
   try {
+    const userRef = ref(db, `users/${dbUserId}`);
+    const userSnapshot = await get(userRef);
+    if (!userSnapshot.exists() || userSnapshot.val().locked) {
+        return { success: false, message: "Account is locked or does not exist." };
+    }
+    
+    const userData = userSnapshot.val();
+    const currentUsage = userData.usageBytes || 0;
+    const isPremium = userData.premium === true;
+    const isSpecial = userData.special === true;
+    const quota = isSpecial ? ONE_TB : (isPremium ? 2 * ONE_GB : ONE_GB);
+
+    if (currentUsage >= quota) {
+      return { success: false, message: "Storage limit exceeded. Cannot save diary entry." };
+    }
+
     const diaryRef = ref(db, `users/${dbUserId}/diary`);
     const newEntryRef = push(diaryRef);
     await set(newEntryRef, {

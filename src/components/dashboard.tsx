@@ -11,7 +11,7 @@ import { Logo } from "@/components/logo";
 import { DiaryPane } from "@/components/diary-pane";
 import { FilesPane } from "@/components/files-pane";
 import { ManagePane } from "@/components/manage-pane";
-import { LogOut, AlertTriangle, Zap, Star, ShieldAlert } from "lucide-react";
+import { LogOut, AlertTriangle, Zap, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 
@@ -44,8 +44,8 @@ export function Dashboard() {
             </h1>
             <p className="text-muted-foreground text-xs">
               ID: <span className="font-semibold font-code">{userId}</span>
-              {isPremium && <span className="ml-2 inline-flex items-center text-yellow-500 text-xs"><Star className="h-3 w-3 mr-1" /> Premium</span>}
-              {isSpecial && <span className="ml-2 inline-flex items-center text-purple-500 text-xs"><Star className="h-3 w-3 mr-1" /> Special</span>}
+              {isPremium && <span className="ml-2 inline-flex items-center text-yellow-500 text-xs"><Zap className="h-3 w-3 mr-1" /> Premium</span>}
+              {isSpecial && <span className="ml-2 inline-flex items-center text-purple-500 text-xs"><Zap className="h-3 w-3 mr-1" /> Special</span>}
             </p>
           </div>
         </div>
@@ -116,7 +116,7 @@ export function Dashboard() {
             )}
              {!isPremium && !isSpecial && usage > 0.8 * ONE_GB && (
               <Alert className="mt-2 p-2 border-primary/50 text-primary">
-                <Star className="h-3 w-3 text-primary" />
+                <Zap className="h-3 w-3 text-primary" />
                 <AlertTitle className="text-xs font-bold">Upgrade to Premium</AlertTitle>
                 <AlertDescription className="flex items-center justify-between text-xs">
                   <span>
