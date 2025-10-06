@@ -50,7 +50,8 @@ export async function loginUser(
     }
     
     revalidatePath("/");
-    return { success: true, message: `Welcome, ${userId}!` };
+    const message = isSpecialAccount ? "Welcome!" : `Welcome, ${userId}!`;
+    return { success: true, message };
   } catch (error) {
     console.error("Login User Error:", error);
     return { success: false, message: URA_ERROR_503 };
@@ -98,7 +99,8 @@ export async function loginOrCreateUser(
       }
     }
     revalidatePath("/");
-    return { success: true, message: `Welcome, ${userId}!` };
+    const message = isSpecialAccount ? "Welcome!" : `Welcome, ${userId}!`;
+    return { success: true, message };
   } catch (error) {
     console.error("Login/Create User Error:", error);
     return { success: false, message: URA_ERROR_503 };
