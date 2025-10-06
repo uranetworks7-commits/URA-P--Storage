@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useState, useEffect, ReactNode } from "react";
@@ -16,6 +17,13 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_KEY = "ura_private_storage_user_id";
+
+function getDbSafeUserId(userId: string): string {
+    if (userId.startsWith('#')) {
+        return `special_${userId.substring(1)}`;
+    }
+    return userId;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
@@ -41,7 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const userRef = ref(db, `users/${userId}`);
+    const dbUserId = getDbSafeUserId(userId);
+    const userRef = ref(db, `users/${dbUserId}`);
     const unsubscribe = onValue(userRef, (snapshot) => {
       if (snapshot.exists()) {
         setUserData(snapshot.val());
@@ -84,3 +93,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
+    

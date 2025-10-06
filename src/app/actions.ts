@@ -17,6 +17,13 @@ const ONE_MB = 1048576;
 const ONE_GB = 1073741824;
 const ONE_TB = 1099511627776;
 
+function getDbSafeUserId(userId: string): string {
+    if (userId.startsWith('#')) {
+        return `special_${userId.substring(1)}`;
+    }
+    return userId;
+}
+
 export async function loginOrCreateUser(
   userId: string,
   username: string,
@@ -29,10 +36,10 @@ export async function loginOrCreateUser(
     return { success: false, message: "Please enter a valid 6-digit numeric ID, optionally prefixed with #" };
   }
 
-  const finalUserId = isSpecialAccount ? `#${numericId}` : numericId;
+  const dbUserId = getDbSafeUserId(userId);
 
   try {
-    const userRef = ref(db, `users/${finalUserId}`);
+    const userRef = ref(db, `users/${dbUserId}`);
     const snapshot = await get(userRef);
 
     if (!snapshot.exists()) {
@@ -58,7 +65,7 @@ export async function loginOrCreateUser(
       }
     }
     revalidatePath("/");
-    return { success: true, message: `Welcome, ${finalUserId}!` };
+    return { success: true, message: `Welcome, ${userId}!` };
   } catch (error) {
     console.error("Login/Create User Error:", error);
     return { success: false, message: URA_ERROR_503 };
@@ -70,9 +77,10 @@ export async function lockAccount(prevState: FormState, formData: FormData): Pro
   if (!userId) {
     return { success: false, message: "Invalid User ID provided." };
   }
+  const dbUserId = getDbSafeUserId(userId);
 
   try {
-    const userRef = ref(db, `users/${userId}`);
+    const userRef = ref(db, `users/${dbUserId}`);
     const snapshot = await get(userRef);
     if (!snapshot.exists()) {
       return { success: false, message: "User not found." };
@@ -102,9 +110,10 @@ export async function unlockAccount(prevState: FormState, formData: FormData): P
     if (!userId || !code) {
         return { success: false, message: "User ID and unlock code are required." };
     }
+    const dbUserId = getDbSafeUserId(userId);
 
     try {
-        const userRef = ref(db, `users/${userId}`);
+        const userRef = ref(db, `users/${dbUserId}`);
         const snapshot = await get(userRef);
         const userData = snapshot.val();
 
@@ -140,9 +149,10 @@ export async function saveDiaryEntry(
   if (!text || !userId) {
     return { success: false, message: "Missing required fields." };
   }
+  const dbUserId = getDbSafeUserId(userId);
   
   try {
-    const diaryRef = ref(db, `users/${userId}/diary`);
+    const diaryRef = ref(db, `users/${dbUserId}/diary`);
     const newEntryRef = push(diaryRef);
     await set(newEntryRef, {
       text,
@@ -167,9 +177,10 @@ export async function updateDiaryEntry(
   if (!text || !userId || !entryId) {
     return { success: false, message: "Missing required fields for update." };
   }
+  const dbUserId = getDbSafeUserId(userId);
 
   try {
-    const entryRef = ref(db, `users/${userId}/diary/${entryId}`);
+    const entryRef = ref(db, `users/${dbUserId}/diary/${entryId}`);
     await update(entryRef, {
       text,
       timestamp: Date.now(), // Also update the timestamp to reflect the edit time
@@ -215,9 +226,11 @@ export async function uploadFileAndSave(
     return { success: false, message: "File is too large. Max 1MB for direct upload. Please use URL upload for larger files." };
   }
 
+  const dbUserId = getDbSafeUserId(userId);
+
   try {
     // Check quota
-    const userRef = ref(db, `users/${userId}`);
+    const userRef = ref(db, `users/${dbUserId}`);
     const userSnapshot = await get(userRef);
     if (!userSnapshot.exists() || userSnapshot.val().locked) {
         return { success: false, message: "Account is locked or does not exist." };
@@ -243,7 +256,7 @@ export async function uploadFileAndSave(
       type: file.type || 'application/octet-stream'
     };
 
-    const filesRef = ref(db, `users/${userId}/files`);
+    const filesRef = ref(db, `users/${dbUserId}/files`);
     const newFileRef = push(filesRef);
     await set(newFileRef, fileRecord);
     
@@ -270,9 +283,11 @@ export async function uploadFileFromUrlAndSave(
   if (!fileUrl || !userId) {
     return { success: false, message: "URL and User ID are required." };
   }
+  
+  const dbUserId = getDbSafeUserId(userId);
 
   try {
-    const userRef = ref(db, `users/${userId}`);
+    const userRef = ref(db, `users/${dbUserId}`);
     const userSnapshot = await get(userRef);
     if (!userSnapshot.exists() || userSnapshot.val().locked) {
         return { success: false, message: "Account is locked or does not exist." };
@@ -310,7 +325,7 @@ export async function uploadFileFromUrlAndSave(
       type: fileType
     };
 
-    const filesRef = ref(db, `users/${userId}/files`);
+    const filesRef = ref(db, `users/${dbUserId}/files`);
     const newFileRef = push(filesRef);
     await set(newFileRef, fileRecord);
 
@@ -329,14 +344,16 @@ export async function deleteItem(userId: string, itemType: 'diary' | 'files', it
     return { success: false, message: "Missing required information for deletion." };
   }
 
+  const dbUserId = getDbSafeUserId(userId);
+
   try {
-    const userRef = ref(db, `users/${userId}`);
+    const userRef = ref(db, `users/${dbUserId}`);
     const userSnapshot = await get(userRef);
     if (!userSnapshot.exists() || userSnapshot.val().locked) {
         return { success: false, message: "Account is locked or does not exist." };
     }
     
-    const itemRef = ref(db, `users/${userId}/${itemType}/${itemId}`);
+    const itemRef = ref(db, `users/${dbUserId}/${itemType}/${itemId}`);
     
     if (itemType === 'files') {
       const fileSnapshot = await get(itemRef);
@@ -358,3 +375,5 @@ export async function deleteItem(userId: string, itemType: 'diary' | 'files', it
     return { success: false, message: URA_ERROR_503 };
   }
 }
+
+    
