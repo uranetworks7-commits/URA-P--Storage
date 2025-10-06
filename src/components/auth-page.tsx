@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/hooks/use-auth";
-import { loginOrCreateUser, unlockAccount } from "@/app/actions";
+import { loginOrCreateUser, unlockAccount, loginUser } from "@/app/actions";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -72,8 +72,7 @@ export function AuthPage() {
     defaultValues: { unlockCode: "" },
   });
 
-  // Share action state between forms
-  const [formState, formAction, isPending] = React.useActionState(async (_: any, data: FormData) => {
+  const [createState, createFormAction, isCreatePending] = React.useActionState(async (_: any, data: FormData) => {
     const userId = data.get('userId') as string;
     const username = data.get('username') as string | undefined;
     const email = data.get('email') as string | undefined;
@@ -81,36 +80,62 @@ export function AuthPage() {
     return result;
   }, { success: false, message: "" });
   
+  const [loginState, loginFormAction, isLoginPending] = React.useActionState(async (_: any, data: FormData) => {
+    const userId = data.get('userId') as string;
+    const result = await loginUser(userId);
+    return result;
+  }, { success: false, message: "" });
+  
   const [unlockState, unlockAction, isUnlockPending] = React.useActionState(unlockAccount, { success: false, message: "" });
 
 
   useEffect(() => {
-    if (formState.message) {
-      if (formState.success) {
+    if (createState.message) {
+      if (createState.success) {
         toast({
           title: "Success",
-          description: formState.message,
+          description: createState.message,
         });
-        // Get the successful user ID from either form
-        const userId = activeTab === 'login' ? loginForm.getValues("userId") : createForm.getValues("userId");
+        const userId = createForm.getValues("userId");
         if (userId) {
           login(userId);
         }
       } else {
-        if (formState.message === "Account is locked.") {
-            const userId = activeTab === 'login' ? loginForm.getValues("userId") : createForm.getValues("userId");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: createState.message,
+        });
+      }
+    }
+  }, [createState, login, toast, createForm]);
+
+  useEffect(() => {
+    if (loginState.message) {
+      if (loginState.success) {
+        toast({
+          title: "Success",
+          description: loginState.message,
+        });
+        const userId = loginForm.getValues("userId");
+        if (userId) {
+          login(userId);
+        }
+      } else {
+        if (loginState.message === "Account is locked.") {
+            const userId = loginForm.getValues("userId");
             setUserIdToUnlock(userId);
             setUnlockModalOpen(true);
         } else {
             toast({
               variant: "destructive",
               title: "Error",
-              description: formState.message,
+              description: loginState.message,
             });
         }
       }
     }
-  }, [formState, login, toast, loginForm, createForm, activeTab]);
+  }, [loginState, login, toast, loginForm]);
 
   useEffect(() => {
     if(unlockState.message) {
@@ -143,7 +168,7 @@ export function AuthPage() {
         </TabsList>
         <TabsContent value="login">
           <Card>
-            <form action={formAction}>
+            <form action={loginFormAction}>
               <CardHeader className="p-4">
                 <CardTitle className="font-headline text-lg">Login to Your Account</CardTitle>
                 <CardDescription className="text-xs">Enter your 6-digit ID to access your storage.</CardDescription>
@@ -170,9 +195,9 @@ export function AuthPage() {
                 </Alert>
               </CardContent>
               <CardFooter className="p-4">
-                 <Button type="submit" disabled={isPending} className="w-full h-9">
+                 <Button type="submit" disabled={isLoginPending} className="w-full h-9">
                     <LogIn className="mr-2 h-4 w-4" />
-                    {isPending ? "Processing..." : "Login"}
+                    {isLoginPending ? "Processing..." : "Login"}
                 </Button>
               </CardFooter>
             </form>
@@ -180,7 +205,7 @@ export function AuthPage() {
         </TabsContent>
         <TabsContent value="register">
           <Card>
-            <form action={formAction}>
+            <form action={createFormAction}>
               <CardHeader className="p-4">
                 <CardTitle className="font-headline text-lg">Create a New Account</CardTitle>
                 <CardDescription className="text-xs">Choose a 6-digit ID to secure your new storage.</CardDescription>
@@ -225,9 +250,9 @@ export function AuthPage() {
                 </div>
               </CardContent>
               <CardFooter className="p-4">
-                <Button type="submit" className="w-full h-9" disabled={isPending}>
+                <Button type="submit" className="w-full h-9" disabled={isCreatePending}>
                     <UserPlus className="mr-2 h-4 w-4" />
-                    {isPending ? "Creating..." : "Create Account"}
+                    {isCreatePending ? "Creating..." : "Create Account"}
                 </Button>
               </CardFooter>
             </form>

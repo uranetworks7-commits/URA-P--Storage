@@ -24,6 +24,39 @@ function getDbSafeUserId(userId: string): string {
     return userId;
 }
 
+export async function loginUser(
+  userId: string,
+): Promise<FormState> {
+  const isSpecialAccount = userId.startsWith('#');
+  const numericId = isSpecialAccount ? userId.substring(1) : userId;
+
+  if (!/^\d{6}$/.test(numericId)) {
+    return { success: false, message: "Please enter a valid 6-digit numeric ID, optionally prefixed with #" };
+  }
+
+  const dbUserId = getDbSafeUserId(userId);
+
+  try {
+    const userRef = ref(db, `users/${dbUserId}`);
+    const snapshot = await get(userRef);
+
+    if (!snapshot.exists()) {
+      return { success: false, message: "User not found. Please create an account." };
+    }
+    
+    const userData = snapshot.val();
+    if (userData.locked) {
+      return { success: false, message: "Account is locked." };
+    }
+    
+    revalidatePath("/");
+    return { success: true, message: `Welcome, ${userId}!` };
+  } catch (error) {
+    console.error("Login User Error:", error);
+    return { success: false, message: URA_ERROR_503 };
+  }
+}
+
 export async function loginOrCreateUser(
   userId: string,
   username: string,
