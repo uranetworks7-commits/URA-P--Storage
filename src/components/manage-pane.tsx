@@ -423,12 +423,16 @@ export function ManagePane() {
             </ScrollArea>
           </div>
           <div>
-            <h3 className="font-semibold mb-1 text-xs flex items-center gap-2">
-              <Link href="/files" className="cursor-pointer">
-                <ZIcon />
+            <div className="flex justify-between items-center mb-1">
+              <h3 className="font-semibold text-xs flex items-center gap-2">
+                <FileIcon className="h-3 w-3" />
+                Uploaded Files
+              </h3>
+              <Link href="/files" className="flex items-center gap-2 text-xs font-semibold text-primary hover:underline">
+                <span>Your files</span>
+                <Image src="https://files.catbox.moe/09twlp.png" alt="Files" width={20} height={20} className="rounded-sm" />
               </Link>
-              Uploaded Files
-            </h3>
+            </div>
              <ScrollArea className="h-48 rounded-md border p-1">
               {files.length > 0 ? files.map(([id, file]: [string, StoredFile]) => (
                 <div key={id} className="group mb-1 last:mb-0">
